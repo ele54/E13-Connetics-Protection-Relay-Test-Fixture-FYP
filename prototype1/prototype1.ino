@@ -1,8 +1,8 @@
-/#
+/*
 Prototype 1:
 
   CB_status is outputted etc.
-#/
+*/
 
 void setup() {
   // put your setup code here, to run once:
