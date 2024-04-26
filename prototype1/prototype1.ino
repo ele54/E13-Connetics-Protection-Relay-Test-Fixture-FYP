@@ -11,6 +11,8 @@ Prototype 1:
 #define CB_output 3
 #define auto_reclose_signal 4
 #define spring_charged_state_output 5
+// #define auxiliary_1_output 6
+// #define auxiliary_2_output 6
 // #define CB_control_sw 6
 // auxiliary outputs
 
@@ -18,6 +20,11 @@ Prototype 1:
 bool CB_status = 1;  //0 for open/tripped (1 for closed/untripped)
 bool spring_charged_state = 1; //1 for charged, 0 for not charged. !!NEED SOMETHING TO TOGGLE THIS
 // auxiliary contacts
+
+struct auxiliary {
+  int output_pin;
+  bool status;
+}
 
 void setup() {
   // put your setup code here, to run once:
