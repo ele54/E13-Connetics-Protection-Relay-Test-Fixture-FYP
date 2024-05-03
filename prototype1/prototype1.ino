@@ -2,8 +2,11 @@
 Prototype 1:
 
   CB status trips based on signal.
-  CB recloses based on auto reclose signal.
+  Spring-charge contact outputs based on whether if switch is closed.
 */
+// Defines to make code more readable
+#define open 0
+#define closed 1
 
 // I/O pins
 // can use digital pins 2 to 19
@@ -11,15 +14,17 @@ Prototype 1:
 #define CB_output 3
 #define spring_charged_contact_input 4
 #define spring_charged_contact_output 5
-// #define auxiliary_1_output 6
-// #define auxiliary_2_output 6
+#define auxiliary_52A_output 6
+#define auxiliary_52B_output 6
 // #define CB_control_sw 6
 // auxiliary outputs
 
 // status variables
-bool CB_status = 1;  //0 for open/tripped (1 for closed/untripped)
-bool spring_charged_switch = 1; //1 for charged (switch closed), 0 for not charged (switch open). !!NEED SOMETHING TO TOGGLE THIS
+int CB_status = closed;  //0 for open/tripped (1 for closed/untripped) !! need to add states failed and unknown (would be manually toggled)
+bool spring_charged_switch = closed; //1 for charged (switch closed), 0 for not charged (switch open). !!NEED SOMETHING TO TOGGLE THIS
 // auxiliary contacts
+bool auxiliary_52A_status = open;
+bool auxiliary_52B_status = closed;
 
 // struct auxiliary {
 //   int output_pin;
@@ -37,13 +42,19 @@ void setup() {
   //output pins
   pinMode(CB_output, OUTPUT);
   pinMode(spring_charged_contact_output, OUTPUT);
+  pinMode(auxiliary_52A_output, OUTPUT);
+  pinMode(auxiliary_52B_output, OUTPUT);
 }
 
 void loop() {
+  // if manual control switch is on
+  // read input switches
+  // spring-charge_switch = read(spring_charge_manual_switch)
+
   int trip_signal = digitalRead(trip_input);
   
   if (trip_signal == HIGH) {
-    CB_status = 0;
+    CB_status = open;
   }
 
   if (spring_charged_switch == 1) {
@@ -53,5 +64,11 @@ void loop() {
     digitalWrite(spring_charged_contact_output, 0);   // pulls spring-charged switch low if it is open
   }
 
-  digitalWrite(CB_output, CB_status);
+  // Auxiliary Contact outputs
+  if (CB_status == open) {
+    auxiliary_52A_status = open;
+    auxiliary_52B_status = closed;
+  }
+
+  digitalWrite(CB_output, CB_status);    // don't need this if circuit breaker status is only read through auxiliary contact position
 }
