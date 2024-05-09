@@ -5,31 +5,25 @@ Prototype 1:
   Spring-charge contact outputs based on whether if switch is closed.
 */
 // Defines to make code more readable
-#define open 0
-#define closed 1
+enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
 
 // I/O pins
-// can use digital pins 2 to 19
+// can use digital pins 2 to 9, 14 to 19
 #define trip_input 2
 #define CB_output 3
 #define spring_charged_contact_input 4
 #define spring_charged_contact_output 5
 #define auxiliary_52A_output 6
-#define auxiliary_52B_output 6
+#define auxiliary_52B_output 7
 // #define CB_control_sw 6
 // auxiliary outputs
 
 // status variables
-int CB_status = closed;  //0 for open/tripped (1 for closed/untripped) !! need to add states failed and unknown (would be manually toggled)
-bool spring_charged_switch = closed; //1 for charged (switch closed), 0 for not charged (switch open). !!NEED SOMETHING TO TOGGLE THIS
+State CB_status = CLOSED;  //0 for open/tripped (1 for closed/untripped) !! need to add states failed and unknown (would be manually toggled)
+State spring_charged_switch = CLOSED; //1 for charged (switch closed), 0 for not charged (switch open). !!NEED SOMETHING TO TOGGLE THIS
 // auxiliary contacts
-bool auxiliary_52A_status = open;
-bool auxiliary_52B_status = closed;
-
-// struct auxiliary {
-//   int output_pin;
-//   bool status;
-// }
+State auxiliary_52A_status = OPEN;
+State auxiliary_52B_status = CLOSED;
 
 void setup() {
   // put your setup code here, to run once:
@@ -64,11 +58,21 @@ void loop() {
     digitalWrite(spring_charged_contact_output, 0);   // pulls spring-charged switch low if it is open
   }
 
-  // Auxiliary Contact outputs
-  if (CB_status == open) {
-    auxiliary_52A_status = open;
-    auxiliary_52B_status = closed;
+  // Auxiliary Contact outputs for CB status
+  switch (CB_status) {
+    case OPEN:
+      digitalWrite(auxiliary_52A_output, open);
+      digitalWrite(auxiliary_52B_output, closed);
+      break;
+    case CLOSED:
+    
   }
+  if (CB_status == open) {
 
-  digitalWrite(CB_output, CB_status);    // don't need this if circuit breaker status is only read through auxiliary contact position
+  } else if (CB_status == closed)  {
+    digitalWrite(auxiliary_52A_output, closed);
+    digitalWrite(auxiliary_52B_output, open);
+  } else if (CB_status == )
+  
+
 }
