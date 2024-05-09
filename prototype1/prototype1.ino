@@ -15,8 +15,8 @@ enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
 #define spring_charged_contact_output 5
 #define auxiliary_52A_output 6
 #define auxiliary_52B_output 7
-// #define CB_control_sw 6
-// auxiliary outputs
+#define CB_open_button 8
+#define CB_close_button 9
 
 // status variables
 State CB_status = CLOSED;  //0 for open/tripped (1 for closed/untripped) !! need to add states failed and unknown (would be manually toggled)
@@ -31,7 +31,8 @@ void setup() {
   //input pins
   pinMode(trip_input, INPUT);   
   pinMode(spring_charged_contact_input, INPUT);   
-  // pinMode(CB_control_sw, INPUT);   
+  pinMode(CB_open_button, INPUT);   
+  pinMode(CB_close_button, INPUT);   
 
   //output pins
   pinMode(CB_output, OUTPUT);
@@ -41,14 +42,22 @@ void setup() {
 }
 
 void loop() {
-  // if manual control switch is on
-  // read input switches
-  // spring-charge_switch = read(spring_charge_manual_switch)
-
   int trip_signal = digitalRead(trip_input);
   
   if (trip_signal == HIGH) {
     CB_status = OPEN;
+    digitalWrite(auxiliary_52A_output, OPEN);
+    digitalWrite(auxiliary_52B_output, CLOSED);
+  }
+
+  int manual_CB_open = digitalRead(CB_open_button);
+  int manual_CB_close = digitalRead(CB_close_button);
+
+  if (manual_CB_open == HIGH) {
+    CB_status = OPEN;
+  }
+  if (manual_CB_close == HIGH) {
+    CB_status = CLOSED;
   }
 
   if (spring_charged_switch == CLOSED) {
