@@ -1,9 +1,11 @@
 /*
 Prototype 1:
 
-  CB status trips based on signal.
+  CB status trips based on signal and manual button inputs.
   Spring-charge contact outputs based on whether if switch is closed.
 */
+#include <ezButton.h>
+
 // Defines to make code more readable
 enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
 
@@ -15,8 +17,9 @@ enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
 #define spring_charged_contact_output 5
 #define auxiliary_52A_output 6
 #define auxiliary_52B_output 7
-#define CB_open_button 8
-#define CB_close_button 9
+
+ezButton CB_close_button(8);
+ezButton CB_open_button(9);
 
 // status variables
 State CB_status = CLOSED;  //0 for open/tripped (1 for closed/untripped) !! need to add states failed and unknown (would be manually toggled)
@@ -39,9 +42,16 @@ void setup() {
   pinMode(spring_charged_contact_output, OUTPUT);
   pinMode(auxiliary_52A_output, OUTPUT);
   pinMode(auxiliary_52B_output, OUTPUT);
+
+  // Buttons
+  CB_close_button.setDebounceTime(50);
+  CB_open_button.setDebounceTime(50);
 }
 
 void loop() {
+  CB_close_button.loop();
+  CB_open_button.loop();
+
   int trip_signal = digitalRead(trip_input);
   
   if (trip_signal == HIGH) {
@@ -50,14 +60,14 @@ void loop() {
     digitalWrite(auxiliary_52B_output, CLOSED);
   }
 
-  int manual_CB_open = digitalRead(CB_open_button);
-  int manual_CB_close = digitalRead(CB_close_button);
+  int manual_CB_close = CB_close_button.getState();
+  int manual_CB_open = CB_open_button.getState();
 
-  if (manual_CB_open == HIGH) {
-    CB_status = OPEN;
-  }
-  if (manual_CB_close == HIGH) {
+  if (CB_close_button.isPressed()) {
     CB_status = CLOSED;
+  }
+  if (CB_open_button.isPressed()) {
+    CB_status = OPEN;
   }
 
   if (spring_charged_switch == CLOSED) {
