@@ -48,10 +48,10 @@ void loop() {
   int trip_signal = digitalRead(trip_input);
   
   if (trip_signal == HIGH) {
-    CB_status = open;
+    CB_status = OPEN;
   }
 
-  if (spring_charged_switch == 1) {
+  if (spring_charged_switch == CLOSED) {
     int spring_charge_status = digitalRead(spring_charged_contact_input);
     digitalWrite(spring_charged_contact_output, spring_charge_status);
   } else {
@@ -61,18 +61,21 @@ void loop() {
   // Auxiliary Contact outputs for CB status
   switch (CB_status) {
     case OPEN:
-      digitalWrite(auxiliary_52A_output, open);
-      digitalWrite(auxiliary_52B_output, closed);
+      digitalWrite(auxiliary_52A_output, OPEN);
+      digitalWrite(auxiliary_52B_output, CLOSED);
       break;
     case CLOSED:
-    
+      digitalWrite(auxiliary_52A_output, CLOSED);
+      digitalWrite(auxiliary_52B_output, OPEN);
+      break;
+    case FAILURE:
+      digitalWrite(auxiliary_52A_output, CLOSED);
+      digitalWrite(auxiliary_52B_output, CLOSED);
+      break;
+    case UNKNOWN:
+      digitalWrite(auxiliary_52A_output, OPEN);
+      digitalWrite(auxiliary_52B_output, OPEN);
+      break;
   }
-  if (CB_status == open) {
-
-  } else if (CB_status == closed)  {
-    digitalWrite(auxiliary_52A_output, closed);
-    digitalWrite(auxiliary_52B_output, open);
-  } else if (CB_status == )
   
-
 }
