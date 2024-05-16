@@ -17,11 +17,12 @@ enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
 #define spring_charged_contact_output 5
 #define auxiliary_52A_output 6
 #define auxiliary_52B_output 7
+#define auxiliary_input 8
 
 ezAnalogKeypad buttonSet1(A0);   // Generic name can be changed
 
 // CB status variables
-State CB_status = CLOSED;  //0 for open/tripped (1 for closed/untripped) !! need to add states failed and unknown (would be manually toggled)
+State CB_status = CLOSED;  
 State spring_charged_switch = CLOSED; //1 for charged (switch closed), 0 for not charged (switch open). !!NEED SOMETHING TO TOGGLE THIS
 
 void setup() {
@@ -31,6 +32,7 @@ void setup() {
   //input pins
   pinMode(trip_input, INPUT);   
   pinMode(spring_charged_contact_input, INPUT);   
+  pinMode(auxiliary_input, INPUT);
 
   //output pins
   pinMode(CB_output, OUTPUT);
@@ -94,22 +96,23 @@ void loop() {
   }
 
   // Auxiliary Contact outputs for CB status
+  int auxiliary_signal = digitalRead(auxiliary_input);
   switch (CB_status) {
     case OPEN:
-      digitalWrite(auxiliary_52A_output, OPEN);
-      digitalWrite(auxiliary_52B_output, CLOSED);
+      digitalWrite(auxiliary_52A_output, !auxiliary_signal);             // open = output opposite of input signal
+      digitalWrite(auxiliary_52B_output, auxiliary_signal); // closed = connect output to the input signal
       break;
     case CLOSED:
-      digitalWrite(auxiliary_52A_output, CLOSED);
-      digitalWrite(auxiliary_52B_output, OPEN);
+      digitalWrite(auxiliary_52A_output, auxiliary_signal);
+      digitalWrite(auxiliary_52B_output, !auxiliary_signal);
       break;
     case FAILURE:
-      digitalWrite(auxiliary_52A_output, CLOSED);
-      digitalWrite(auxiliary_52B_output, CLOSED);
+      digitalWrite(auxiliary_52A_output, auxiliary_signal);
+      digitalWrite(auxiliary_52B_output, auxiliary_signal);
       break;
     case UNKNOWN:
-      digitalWrite(auxiliary_52A_output, OPEN);
-      digitalWrite(auxiliary_52B_output, OPEN);
+      digitalWrite(auxiliary_52A_output, !auxiliary_signal);
+      digitalWrite(auxiliary_52B_output, !auxiliary_signal);
       break;
   }
 
