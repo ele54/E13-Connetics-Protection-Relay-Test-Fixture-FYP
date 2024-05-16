@@ -39,4 +39,13 @@ void loop() {
     Serial.print((int)button);
     Serial.println(" is pressed");
   }
+  
+  switch (button) {
+    case 1:
+      Serial.print(1);
+      break;
+    case 2:
+      Serial.print(2);
+      break;
+  }
 }
