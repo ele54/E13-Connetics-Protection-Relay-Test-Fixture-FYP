@@ -23,7 +23,7 @@ ezAnalogKeypad buttonSet1(A0);   // Generic name can be changed
 
 // CB status variables
 State CB_status = CLOSED;  
-State spring_charged_switch = CLOSED; //1 for charged (switch closed), 0 for not charged (switch open). !!NEED SOMETHING TO TOGGLE THIS
+State spring_charged_switch = CLOSED; //1 for charged (switch closed), 0 for discharged (switch open). !!NEED SOMETHING TO TOGGLE THIS
 
 void setup() {
   // put your setup code here, to run once:
@@ -88,11 +88,11 @@ void loop() {
     digitalWrite(auxiliary_52B_output, CLOSED);
   }
 
+  int spring_charge_signal = digitalRead(spring_charged_contact_input);
   if (spring_charged_switch == CLOSED) {
-    int spring_charge_signal = digitalRead(spring_charged_contact_input);
     digitalWrite(spring_charged_contact_output, spring_charge_signal);
   } else {
-    digitalWrite(spring_charged_contact_output, 0);   // pulls spring-charged switch low if it is open
+    digitalWrite(spring_charged_contact_output, !spring_charge_signal);   // pulls spring-charged switch low if it is open
   }
 
   // Auxiliary Contact outputs for CB status
