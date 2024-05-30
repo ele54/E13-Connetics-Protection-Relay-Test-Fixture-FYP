@@ -2,7 +2,6 @@
 Prototype 1:
 
   CB status trips based on signal and manual button inputs.
-  Spring-charge contact outputs based on whether if switch is closed.
 */
 #include <ezAnalogKeypad.h>
 
@@ -13,8 +12,6 @@ enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
 // can use digital pins 2 to 9, 14 to 19
 #define trip_input 2
 #define CB_output 3
-#define spring_charged_contact_input 4
-#define spring_charged_contact_output 5
 #define auxiliary_52A_output 6
 #define auxiliary_52B_output 7
 #define auxiliary_input 8
@@ -23,7 +20,6 @@ ezAnalogKeypad buttonSet1(A0);   // Generic name can be changed
 
 // CB status variables
 State CB_status = CLOSED;  
-State spring_charged_switch = CLOSED; //1 for charged (switch closed), 0 for discharged (switch open). !!NEED SOMETHING TO TOGGLE THIS
 
 void setup() {
   // put your setup code here, to run once:
@@ -31,12 +27,10 @@ void setup() {
 
   //input pins
   pinMode(trip_input, INPUT);   
-  pinMode(spring_charged_contact_input, INPUT);   
   pinMode(auxiliary_input, INPUT);
 
   //output pins
   pinMode(CB_output, OUTPUT);
-  pinMode(spring_charged_contact_output, OUTPUT);
   pinMode(auxiliary_52A_output, OUTPUT);
   pinMode(auxiliary_52B_output, OUTPUT);
 
@@ -86,13 +80,6 @@ void loop() {
     CB_status = OPEN; // would this conflict with manual control
     digitalWrite(auxiliary_52A_output, OPEN);
     digitalWrite(auxiliary_52B_output, CLOSED);
-  }
-
-  int spring_charge_signal = digitalRead(spring_charged_contact_input);
-  if (spring_charged_switch == CLOSED) {
-    digitalWrite(spring_charged_contact_output, spring_charge_signal);
-  } else {
-    digitalWrite(spring_charged_contact_output, !spring_charge_signal);   // pulls spring-charged switch low if it is open
   }
 
   // Auxiliary Contact outputs for CB status
