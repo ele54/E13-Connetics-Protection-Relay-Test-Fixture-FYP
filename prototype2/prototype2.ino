@@ -111,10 +111,22 @@ void loop() {
   int trip_signal = digitalRead(trip_input);
   
   if (trip_signal == HIGH) {  
+    Serial.println("TRIP");
     CB_status = OPEN; // would this conflict with manual control
     digitalWrite(auxiliary_52A_output, OPEN);
     digitalWrite(auxiliary_52B_output, CLOSED);
   }
+  int counter = 0;
+  if (counter = 10000) {
+    Serial.print("CB status = ");
+    Serial.print(CB_status);
+    Serial.println();
+    Serial.print("Trip signal = ");
+    Serial.print(trip_signal);
+    Serial.println();
+    counter = 0;
+  }
+  counter ++;
 
   // Auxiliary Contact outputs for CB status
   int auxiliary_signal = digitalRead(auxiliary_input);
