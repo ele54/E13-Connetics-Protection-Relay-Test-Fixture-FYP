@@ -12,7 +12,7 @@ enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
 // I/O pins
 // can use digital pins 2 to 13
 #define trip_input 2
-#define auxiliary_input 3
+#define auxiliary_ref_input 3
 #define gas_pressure_ref_input 4
 #define earth_switch_ref_input 5
 #define supervision_ref_input 6
@@ -41,7 +41,7 @@ void setup() {
 
   //input pins
   pinMode(trip_input, INPUT);   
-  pinMode(auxiliary_input, INPUT);
+  pinMode(auxiliary_ref_input, INPUT);
   pinMode(gas_pressure_ref_input, INPUT);
   pinMode(earth_switch_ref_input, INPUT);
   pinMode(supervision_ref_input, INPUT);
@@ -117,7 +117,7 @@ void loop() {
   }
 
   // Auxiliary Contact outputs for CB status
-  int auxiliary_signal = digitalRead(auxiliary_input);
+  int auxiliary_signal = digitalRead(auxiliary_ref_input);
   switch (CB_status) {
     case OPEN:
       digitalWrite(auxiliary_52A_output, !auxiliary_signal);             // open = output opposite of input signal
