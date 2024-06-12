@@ -62,8 +62,8 @@ void setup() {
   // Below values need to be recalibrated for different prototypes
   buttonSet1.registerKey(1, 0); // button for CB manual close
   buttonSet1.registerKey(2, 288); // button for CB manual open
-  // buttonSet1.registerKey(3, 563); // button for 
-  // buttonSet1.registerKey(4, 688); // button for 
+  buttonSet1.registerKey(3, 563); // button for racked in
+  buttonSet1.registerKey(4, 688); // button for racked out
   buttonSet1.registerKey(5, 760); // button for gas pressure normal
   buttonSet1.registerKey(6, 807); // button for gas pressure low
   buttonSet1.registerKey(7, 845); // button for earth switch closed
@@ -83,8 +83,10 @@ void loop() {
       CB_status = OPEN;
       break;
     case 3:
+      service_position_switch = CLOSED;
       break;
     case 4:
+      service_position_switch = OPEN;
       break;
     case 5:
       gas_pressure_switch = CLOSED;
