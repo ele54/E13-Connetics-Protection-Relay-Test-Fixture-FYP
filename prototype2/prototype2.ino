@@ -7,7 +7,7 @@ Prototype 2:
 #include <ezAnalogKeypad.h>
 
 // Defines to make code more readable
-enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
+enum State {OPEN, CLOSED};
 
 // I/O pins
 // can use digital pins 2 to 13
@@ -16,7 +16,7 @@ enum State {OPEN, CLOSED, FAILURE, UNKNOWN};
 #define gas_pressure_ref_input 4
 #define earth_switch_ref_input 5
 #define supervision_ref_input 6
-#define service_position_ref_input 7
+#define service_position_ref_input 7  
 
 #define auxiliary_52A_output 8
 #define auxiliary_52B_output 9
@@ -62,8 +62,8 @@ void setup() {
   // Below values need to be recalibrated for different prototypes
   buttonSet1.registerKey(1, 0); // button for CB manual close
   buttonSet1.registerKey(2, 288); // button for CB manual open
-  buttonSet1.registerKey(3, 563); // button for CB failure status
-  buttonSet1.registerKey(4, 688); // button for CB unknown status
+  // buttonSet1.registerKey(3, 563); // button for 
+  // buttonSet1.registerKey(4, 688); // button for 
   buttonSet1.registerKey(5, 760); // button for gas pressure normal
   buttonSet1.registerKey(6, 807); // button for gas pressure low
   buttonSet1.registerKey(7, 845); // button for earth switch closed
@@ -83,10 +83,8 @@ void loop() {
       CB_status = OPEN;
       break;
     case 3:
-      CB_status = FAILURE;
       break;
     case 4:
-      CB_status = UNKNOWN;
       break;
     case 5:
       gas_pressure_switch = CLOSED;
@@ -125,14 +123,6 @@ void loop() {
       break;
     case CLOSED:
       digitalWrite(auxiliary_52A_output, auxiliary_signal);
-      digitalWrite(auxiliary_52B_output, !auxiliary_signal);
-      break;
-    case FAILURE:
-      digitalWrite(auxiliary_52A_output, auxiliary_signal);
-      digitalWrite(auxiliary_52B_output, auxiliary_signal);
-      break;
-    case UNKNOWN:
-      digitalWrite(auxiliary_52A_output, !auxiliary_signal);
       digitalWrite(auxiliary_52B_output, !auxiliary_signal);
       break;
   }
