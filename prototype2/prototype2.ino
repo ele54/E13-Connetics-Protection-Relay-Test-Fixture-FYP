@@ -18,12 +18,17 @@ enum State {OPEN, CLOSED};
 #define supervision_ref_input 6
 #define service_position_ref_input 7  
 
-#define auxiliary_52A_output 8
-#define auxiliary_52B_output 9
-#define gas_pressure_status_output 10
-#define earth_switch_status_output 11
-#define supervision_status_output 12
-#define service_position_status_output 13
+// define shift register pins
+#define data_pin 8
+#define latch_pin 9
+#define clock_pin 10
+// #define auxiliary_52A_output 8
+// #define auxiliary_52B_output 9
+// #define gas_pressure_status_output 10
+// #define earth_switch_status_output 11
+// #define supervision_status_output 12
+// #define service_position_status_output 13
+
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   // Generic name can be changed
 
@@ -33,7 +38,47 @@ State CB_status = CLOSED;
 State gas_pressure_switch = CLOSED;   // closed for normal, open for low
 State earth_switch = CLOSED;  
 State supervision_status_switch = CLOSED;   // closed for normal, open for fault
-State service_position_switch = CLOSED;   // closed for racked in, open for racked out (not attached to buttons yet)
+State service_position_switch = CLOSED;   // closed for racked in, open for racked out 
+  
+// Define output signals
+int auxiliary_52A_output;
+int auxiliary_52B_output;
+int service_position_status_output;
+int gas_pressure_status_output;
+int earth_switch_status_output;
+int supervision_status_output;
+
+byte out_data = 0;
+
+void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
+  // Function taken from Arduino Docs Tutorial 
+  // "Serial to Parallel Shifting-Out with a 74HC595"
+  // (Carlyn Maw & Tom Igoe, 26/01/2022)
+
+  int i=0;
+  int pinState;
+
+  pinMode(myClockPin, OUTPUT);
+  pinMode(myDataPin, OUTPUT);
+  digitalWrite(myDataPin, 0);
+  digitalWrite(myClockPin, 0);
+
+  for (i=7; i>=0; i--)  {
+    digitalWrite(myClockPin, 0);
+    if ( myDataOut & (1<<i) ) {
+      pinState= 1;
+    }
+    else {
+      pinState= 0;
+    }
+    digitalWrite(myDataPin, pinState);
+    digitalWrite(myClockPin, 1);
+    digitalWrite(myDataPin, 0);
+  }
+
+  digitalWrite(myClockPin, 0);
+}
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -48,16 +93,17 @@ void setup() {
   pinMode(service_position_ref_input, INPUT);
 
   //output pins
-  pinMode(auxiliary_52A_output, OUTPUT);
-  pinMode(auxiliary_52B_output, OUTPUT);
-  pinMode(gas_pressure_status_output, OUTPUT);
-  pinMode(earth_switch_status_output, OUTPUT);
-  pinMode(supervision_status_output, OUTPUT);
-  pinMode(service_position_status_output, OUTPUT);
+  // pinMode(auxiliary_52A_output, OUTPUT);
+  // pinMode(auxiliary_52B_output, OUTPUT);
+  // pinMode(gas_pressure_status_output, OUTPUT);
+  // pinMode(earth_switch_status_output, OUTPUT);
+  // pinMode(supervision_status_output, OUTPUT);
+  // pinMode(service_position_status_output, OUTPUT);
+
+  // Shift register
+  pinMode(latch_pin, OUTPUT);
 
   // Buttons
-  // CB_close_button.setDebounceTime(50);
-  // CB_open_button.setDebounceTime(50);
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
   // Below values need to be recalibrated for different prototypes
   buttonSet1.registerKey(1, 0); // button for CB manual close
@@ -109,60 +155,71 @@ void loop() {
   }
 
   int trip_signal = digitalRead(trip_input);
-  
+  int auxiliary_signal = digitalRead(auxiliary_ref_input);
   if (trip_signal == HIGH) {  
     CB_status = OPEN; // would this conflict with manual control
-    digitalWrite(auxiliary_52A_output, OPEN);
-    digitalWrite(auxiliary_52B_output, CLOSED);
+    auxiliary_52A_output = !auxiliary_signal;
+    auxiliary_52B_output = auxiliary_signal;
   }
 
-  // Auxiliary Contact outputs for CB status
-  int auxiliary_signal = digitalRead(auxiliary_ref_input);
   switch (CB_status) {
     case OPEN:
-      digitalWrite(auxiliary_52A_output, !auxiliary_signal);             // open = output opposite of input signal
-      digitalWrite(auxiliary_52B_output, auxiliary_signal); // closed = connect output to the input signal
+      auxiliary_52A_output = !auxiliary_signal;             // open = output opposite of input signal
+      auxiliary_52B_output = auxiliary_signal; // closed = connect output to the input signal
       break;
     case CLOSED:
-      digitalWrite(auxiliary_52A_output, auxiliary_signal);
-      digitalWrite(auxiliary_52B_output, !auxiliary_signal);
+      auxiliary_52A_output = auxiliary_signal;
+      auxiliary_52B_output = !auxiliary_signal;
       break;
   }
 
   int gas_pressure_ref_signal = digitalRead(gas_pressure_ref_input);
   switch (gas_pressure_switch) {
     case CLOSED:
-      digitalWrite(gas_pressure_status_output, gas_pressure_ref_signal);
+      gas_pressure_status_output = gas_pressure_ref_signal;
       break;
     case OPEN:
-      digitalWrite(gas_pressure_status_output, !gas_pressure_ref_signal);
+      gas_pressure_status_output = !gas_pressure_ref_signal;
   }
 
   int earth_switch_ref_signal = digitalRead(earth_switch_ref_input);
   switch (earth_switch) {
     case CLOSED:
-      digitalWrite(earth_switch_status_output, earth_switch_ref_signal);
+      earth_switch_status_output = earth_switch_ref_signal;
       break;
     case OPEN:
-      digitalWrite(earth_switch_status_output, !earth_switch_ref_signal);
+      earth_switch_status_output = !earth_switch_ref_signal;
   }
 
   int supervision_ref_signal = digitalRead(supervision_ref_input);
   switch (supervision_status_switch) {
     case CLOSED:
-      digitalWrite(supervision_status_output, supervision_ref_signal);
+      supervision_status_output = supervision_ref_signal;
       break;
     case OPEN:
-      digitalWrite(supervision_status_output, !supervision_ref_signal);
+      supervision_status_output = !supervision_ref_signal;
   }
 
   int service_position_ref_signal = digitalRead(service_position_ref_input);
   switch (service_position_switch) {
     case CLOSED:
-      digitalWrite(service_position_status_output, service_position_ref_input);
+      service_position_status_output = service_position_ref_input;
       break;
     case OPEN:
-      digitalWrite(service_position_status_output, !service_position_ref_input);
+      service_position_status_output = !service_position_ref_input;
   }
 
+  // outputs into byte for shift register
+  bitWrite(out_data, 7, auxiliary_52A_output);
+  bitWrite(out_data, 6, auxiliary_52B_output);
+  bitWrite(out_data, 5, service_position_status_output);
+  bitWrite(out_data, 4, gas_pressure_status_output);
+  bitWrite(out_data, 3, earth_switch_status_output);
+  bitWrite(out_data, 2, supervision_status_output);
+  bitWrite(out_data, 1, 0);
+
+  digitalWrite(latch_pin, 0);
+  shiftOut(data_pin, clock_pin, out_data);
+  digitalWrite(latch_pin, 1);
+  
 }
