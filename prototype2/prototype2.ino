@@ -2,6 +2,7 @@
 Prototype 2:
 
   CB status trips based on signal and manual button inputs.
+  shift register code taken from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
   
 */
 #include <ezAnalogKeypad.h>
@@ -19,9 +20,12 @@ enum State {OPEN, CLOSED};
 #define service_position_ref_input 7  
 
 // define shift register pins
-#define data_pin 8
-#define latch_pin 9
-#define clock_pin 10
+#define data_pin 8  //pin 14 DS
+#define latch_pin 9 //pin 12 SHCP
+#define clock_pin 10  //pin 11 SH_CP
+#define number_of_74hc595s 2
+#define numOfRegisterPins number_of_74hc595s * 8
+boolean registers[numOfRegisterPins];
 // #define auxiliary_52A_output 8
 // #define auxiliary_52B_output 9
 // #define gas_pressure_status_output 10
@@ -48,37 +52,68 @@ int gas_pressure_status_output;
 int earth_switch_status_output;
 int supervision_status_output;
 
-byte out_data = 0;
+// byte out_data = 0;
 
-void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
-  // Function taken from Arduino Docs Tutorial 
-  // "Serial to Parallel Shifting-Out with a 74HC595"
-  // (Carlyn Maw & Tom Igoe, 26/01/2022)
+// void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
+//   // Function taken from Arduino Docs Tutorial 
+//   // "Serial to Parallel Shifting-Out with a 74HC595"
+//   // (Carlyn Maw & Tom Igoe, 26/01/2022)
 
-  int i=0;
-  int pinState;
+//   int i=0;
+//   int pinState;
 
-  pinMode(myClockPin, OUTPUT);
-  pinMode(myDataPin, OUTPUT);
-  digitalWrite(myDataPin, 0);
-  digitalWrite(myClockPin, 0);
+//   pinMode(myClockPin, OUTPUT);
+//   pinMode(myDataPin, OUTPUT);
+//   digitalWrite(myDataPin, 0);
+//   digitalWrite(myClockPin, 0);
 
-  for (i=7; i>=0; i--)  {
-    digitalWrite(myClockPin, 0);
-    if ( myDataOut & (1<<i) ) {
-      pinState= 1;
-    }
-    else {
-      pinState= 0;
-    }
-    digitalWrite(myDataPin, pinState);
-    digitalWrite(myClockPin, 1);
-    digitalWrite(myDataPin, 0);
+//   for (i=7; i>=0; i--)  {
+//     digitalWrite(myClockPin, 0);
+//     if ( myDataOut & (1<<i) ) {
+//       pinState= 1;
+//     }
+//     else {
+//       pinState= 0;
+//     }
+//     digitalWrite(myDataPin, pinState);
+//     digitalWrite(myClockPin, 1);
+//     digitalWrite(myDataPin, 0);
+//   }
+
+//   digitalWrite(myClockPin, 0);
+// }
+
+//set all register pins to LOW
+void clearRegisters(){
+  for(int i = numOfRegisterPins - 1; i >=  0; i--){
+     registers[i] = LOW;
   }
+  writeRegisters();
+} 
 
-  digitalWrite(myClockPin, 0);
+//Set and display registers
+//Only call AFTER all values are set how you would like (slow otherwise)
+void writeRegisters(){
+
+  digitalWrite(latch_pin, LOW);
+
+  for(int i = numOfRegisterPins - 1; i >=  0; i--){
+    digitalWrite(clock_pin, LOW);
+
+    int val = registers[i];
+
+    digitalWrite(data_pin, val);
+    digitalWrite(clock_pin, HIGH);
+
+  }
+  digitalWrite(latch_pin, HIGH);
+
 }
 
+//set an individual pin HIGH or LOW
+void setRegisterPin(int index, int value){
+  registers[index] = value;
+}
 
 void setup() {
   // put your setup code here, to run once:
@@ -102,6 +137,11 @@ void setup() {
 
   // Shift register
   pinMode(latch_pin, OUTPUT);
+  pinMode(clock_pin, OUTPUT);
+  pinMode(data_pin, OUTPUT);
+  //reset all register pins
+  clearRegisters();
+  writeRegisters();
 
   // Buttons
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
@@ -210,16 +250,27 @@ void loop() {
   }
 
   // outputs into byte for shift register
-  bitWrite(out_data, 7, auxiliary_52A_output);
-  bitWrite(out_data, 6, auxiliary_52B_output);
-  bitWrite(out_data, 5, service_position_status_output);
-  bitWrite(out_data, 4, gas_pressure_status_output);
-  bitWrite(out_data, 3, earth_switch_status_output);
-  bitWrite(out_data, 2, supervision_status_output);
-  bitWrite(out_data, 1, 0);
-
-  digitalWrite(latch_pin, 0);
-  shiftOut(data_pin, clock_pin, out_data);
-  digitalWrite(latch_pin, 1);
+  // bitWrite(out_data, 7, auxiliary_52A_output);
+  // bitWrite(out_data, 6, auxiliary_52B_output);
+  // bitWrite(out_data, 5, service_position_status_output);
+  // bitWrite(out_data, 4, gas_pressure_status_output);
+  // bitWrite(out_data, 3, earth_switch_status_output);
+  // bitWrite(out_data, 2, supervision_status_output);
+  // bitWrite(out_data, 1, 0);
+  setRegisterPin(0, LOW);
+  setRegisterPin(1, LOW);
+  setRegisterPin(2, supervision_status_output);
+  setRegisterPin(3, earth_switch_status_output);
+  setRegisterPin(4, gas_pressure_status_output);
+  setRegisterPin(5, service_position_status_output);
+  setRegisterPin(6, auxiliary_52B_output);
+  setRegisterPin(7, auxiliary_52A_output);
+  setRegisterPin(8, LOW);
+  setRegisterPin(9, LOW);
+  setRegisterPin(10, LOW);
+  writeRegisters();
+  // digitalWrite(latch_pin, 0);
+  // shiftOut(data_pin, clock_pin, out_data);
+  // digitalWrite(latch_pin, 1);
   
 }
