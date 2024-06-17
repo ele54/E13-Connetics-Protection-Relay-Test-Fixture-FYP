@@ -26,12 +26,6 @@ enum State {OPEN, CLOSED};
 #define number_of_74hc595s 2
 #define numOfRegisterPins number_of_74hc595s * 8
 boolean registers[numOfRegisterPins];
-// #define auxiliary_52A_output 8
-// #define auxiliary_52B_output 9
-// #define gas_pressure_status_output 10
-// #define earth_switch_status_output 11
-// #define supervision_status_output 12
-// #define service_position_status_output 13
 
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   // Generic name can be changed
@@ -51,37 +45,6 @@ int service_position_status_output;
 int gas_pressure_status_output;
 int earth_switch_status_output;
 int supervision_status_output;
-
-// byte out_data = 0;
-
-// void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
-//   // Function taken from Arduino Docs Tutorial 
-//   // "Serial to Parallel Shifting-Out with a 74HC595"
-//   // (Carlyn Maw & Tom Igoe, 26/01/2022)
-
-//   int i=0;
-//   int pinState;
-
-//   pinMode(myClockPin, OUTPUT);
-//   pinMode(myDataPin, OUTPUT);
-//   digitalWrite(myDataPin, 0);
-//   digitalWrite(myClockPin, 0);
-
-//   for (i=7; i>=0; i--)  {
-//     digitalWrite(myClockPin, 0);
-//     if ( myDataOut & (1<<i) ) {
-//       pinState= 1;
-//     }
-//     else {
-//       pinState= 0;
-//     }
-//     digitalWrite(myDataPin, pinState);
-//     digitalWrite(myClockPin, 1);
-//     digitalWrite(myDataPin, 0);
-//   }
-
-//   digitalWrite(myClockPin, 0);
-// }
 
 //set all register pins to LOW
 void clearRegisters(){
@@ -126,14 +89,6 @@ void setup() {
   pinMode(earth_switch_ref_input, INPUT);
   pinMode(supervision_ref_input, INPUT);
   pinMode(service_position_ref_input, INPUT);
-
-  //output pins
-  // pinMode(auxiliary_52A_output, OUTPUT);
-  // pinMode(auxiliary_52B_output, OUTPUT);
-  // pinMode(gas_pressure_status_output, OUTPUT);
-  // pinMode(earth_switch_status_output, OUTPUT);
-  // pinMode(supervision_status_output, OUTPUT);
-  // pinMode(service_position_status_output, OUTPUT);
 
   // Shift register
   pinMode(latch_pin, OUTPUT);
@@ -204,7 +159,7 @@ void loop() {
 
   switch (CB_status) {
     case OPEN:
-      auxiliary_52A_output = !auxiliary_signal;             // open = output opposite of input signal
+      auxiliary_52A_output = !auxiliary_signal; // open = output opposite of input signal
       auxiliary_52B_output = auxiliary_signal; // closed = connect output to the input signal
       break;
     case CLOSED:
@@ -249,14 +204,7 @@ void loop() {
       service_position_status_output = !service_position_ref_input;
   }
 
-  // outputs into byte for shift register
-  // bitWrite(out_data, 7, auxiliary_52A_output);
-  // bitWrite(out_data, 6, auxiliary_52B_output);
-  // bitWrite(out_data, 5, service_position_status_output);
-  // bitWrite(out_data, 4, gas_pressure_status_output);
-  // bitWrite(out_data, 3, earth_switch_status_output);
-  // bitWrite(out_data, 2, supervision_status_output);
-  // bitWrite(out_data, 1, 0);
+  // outputs into shift register
   setRegisterPin(0, LOW);
   setRegisterPin(1, LOW);
   setRegisterPin(2, supervision_status_output);
@@ -269,8 +217,5 @@ void loop() {
   setRegisterPin(9, LOW);
   setRegisterPin(10, LOW);
   writeRegisters();
-  // digitalWrite(latch_pin, 0);
-  // shiftOut(data_pin, clock_pin, out_data);
-  // digitalWrite(latch_pin, 1);
   
 }
