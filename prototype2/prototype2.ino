@@ -50,6 +50,18 @@ int earth_switch_status_output;
 int supervision_status_output;
 int generic_status_output1;
 
+// Set status output value based on reference input, switch position
+void setStatusOutput(int ref_input, State switch, int output){
+  int ref_signal = digitalRead(ref_input);
+  switch (switch) {
+    case CLOSED:
+      output = ref_signal;
+      break;
+    case OPEN:
+      output = !ref_signal;
+  }
+}
+
 //set all register pins to LOW
 void clearRegisters(){
   for(int i = numOfRegisterPins - 1; i >=  0; i--){
@@ -213,50 +225,11 @@ void loop() {
       break;
   }
 
-  int gas_pressure_ref_signal = digitalRead(gas_pressure_ref_input);
-  switch (gas_pressure_switch) {
-    case CLOSED:
-      gas_pressure_status_output = gas_pressure_ref_signal;
-      break;
-    case OPEN:
-      gas_pressure_status_output = !gas_pressure_ref_signal;
-  }
-
-  int earth_switch_ref_signal = digitalRead(earth_switch_ref_input);
-  switch (earth_switch) {
-    case CLOSED:
-      earth_switch_status_output = earth_switch_ref_signal;
-      break;
-    case OPEN:
-      earth_switch_status_output = !earth_switch_ref_signal;
-  }
-
-  int supervision_ref_signal = digitalRead(supervision_ref_input);
-  switch (supervision_status_switch) {
-    case CLOSED:
-      supervision_status_output = supervision_ref_signal;
-      break;
-    case OPEN:
-      supervision_status_output = !supervision_ref_signal;
-  }
-
-  int service_position_ref_signal = digitalRead(service_position_ref_input);
-  switch (service_position_switch) {
-    case CLOSED:
-      service_position_status_output = service_position_ref_signal;
-      break;
-    case OPEN:
-      service_position_status_output = !service_position_ref_signal;
-  }
-
-  int generic_ref_signal1 = digitalRead(generic_ref_input1);
-  switch (generic_status_switch1) {
-    case CLOSED:
-      generic_status_output1 = generic_ref_signal1;
-      break;
-    case OPEN:
-      generic_status_output1 = !generic_ref_signal1;
-  }
+  setStatusOutput(gas_pressure_ref_input, gas_pressure_switch, gas_pressure_status_output);
+  setStatusOutput(earth_switch_ref_input, earth_switch, earth_switch_status_output);
+  setStatusOutput(supervision_ref_input, supervision_status_switch, supervision_status_output);
+  setStatusOutput(service_position_ref_input, service_position_switch, service_position_status_output);
+  setStatusOutput(generic_ref_input1, generic_status_switch1, generic_status_output1);
 
   // outputs into shift register
   setRegisterPin(0, LOW);
