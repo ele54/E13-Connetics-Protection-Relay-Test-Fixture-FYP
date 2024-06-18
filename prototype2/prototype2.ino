@@ -257,6 +257,12 @@ void loop() {
   setStatusOutput(earth_switch_ref_input, earth_switch, &earth_switch_status_output);
   setStatusOutput(supervision_ref_input, supervision_status_switch, &supervision_status_output);
   setStatusOutput(service_position_ref_input, service_position_switch, &service_position_status_output);
+  setStatusOutput(generic_ref_input1, generic_status_switch1, &generic_status_output1);
+  setStatusOutput(generic_ref_input2, generic_status_switch2, &generic_status_output2);
+  setStatusOutput(generic_ref_input3, generic_status_switch3, &generic_status_output3);
+  setStatusOutput(generic_ref_input4, generic_status_switch4, &generic_status_output4);
+  setStatusOutput(generic_ref_input5, generic_status_switch5, &generic_status_output5);
+
 
   // outputs into shift register
   setRegisterPin(0, LOW);
@@ -268,11 +274,12 @@ void loop() {
   setRegisterPin(6, auxiliary_52B_output);
   setRegisterPin(7, auxiliary_52A_output);
   setRegisterPin(8, LOW);
-  setRegisterPin(9, generic_status_output1);
-  setRegisterPin(10, generic_status_output2);
-  setRegisterPin(11, generic_status_output3);
-  setRegisterPin(12, generic_status_output4);
-  setRegisterPin(13, generic_status_output5);
+  setRegisterPin(9, LOW);
+  setRegisterPin(10, generic_status_output1);
+  setRegisterPin(11, generic_status_output2);
+  setRegisterPin(12, generic_status_output3);
+  setRegisterPin(13, generic_status_output4);
+  setRegisterPin(14, generic_status_output5);
 
   writeRegisters();
   
