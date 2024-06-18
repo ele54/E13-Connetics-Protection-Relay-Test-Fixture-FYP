@@ -20,11 +20,11 @@ enum State {OPEN, CLOSED};
 #define service_position_ref_input 7  
 
 // define shift register pins
-#define data_pin 8  //pin 14 DS
-#define latch_pin 9 //pin 12 SHCP
-#define clock_pin 10  //pin 11 SH_CP
+#define data_pin 11  //pin 14 DS
+#define latch_pin 12 //pin 12 SHCP
+#define clock_pin 13  //pin 11 SH_CP
 #define number_of_74hc595s 2
-#define numOfRegisterPins number_of_74hc595s * 8
+#define numOfRegisterPins number_of_74hc595s * 2
 boolean registers[numOfRegisterPins];
 
 // analog pins are A0(14) to A5(19)
