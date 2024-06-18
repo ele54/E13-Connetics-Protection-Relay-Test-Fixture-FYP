@@ -17,18 +17,25 @@ enum State {OPEN, CLOSED};
 #define gas_pressure_ref_input 4
 #define earth_switch_ref_input 5
 #define supervision_ref_input 6
-#define service_position_ref_input 7  
+#define service_position_ref_input 7 
+#define generic_ref_input1 8
+#define generic_ref_input2 16
+#define generic_ref_input3 17
+#define generic_ref_input4 18
+#define generic_ref_input5 19
+
 
 // define shift register pins and variables
 #define data_pin 11  //pin 14 DS
-#define latch_pin 12 //pin 12 SHCP
+#define latch_pin 12 //pin 12 ST_CP
 #define clock_pin 13  //pin 11 SH_CP
 #define number_of_74hc595s 2
 #define numOfRegisterPins number_of_74hc595s * 8
 boolean registers[numOfRegisterPins];
 
 // analog pins are A0(14) to A5(19)
-ezAnalogKeypad buttonSet1(A0);   // Generic name can be changed
+ezAnalogKeypad buttonSet1(A0);   // Preset CB status buttons
+ezAnalogKeypad buttonSet2(A1);  // Currently used as generic statuses' buttons
 
 // CB status 
 State CB_status = CLOSED;  
@@ -37,7 +44,12 @@ State gas_pressure_switch = CLOSED;   // closed for normal, open for low
 State earth_switch = CLOSED;  
 State supervision_status_switch = CLOSED;   // closed for normal, open for fault
 State service_position_switch = CLOSED;   // closed for racked in, open for racked out 
-  
+State generic_status_switch1 = CLOSED;
+State generic_status_switch2 = CLOSED;
+State generic_status_switch3 = CLOSED;
+State generic_status_switch4 = CLOSED;
+State generic_status_switch5 = CLOSED;
+
 // Define output signals
 int auxiliary_52A_output;
 int auxiliary_52B_output;
@@ -45,6 +57,12 @@ int service_position_status_output;
 int gas_pressure_status_output;
 int earth_switch_status_output;
 int supervision_status_output;
+int generic_status_output1;
+int generic_status_output2;
+int generic_status_output3;
+int generic_status_output4;
+int generic_status_output5;
+
 
 // Set status output value based on reference input, switch position
 void setStatusOutput(int ref_input, State switch_position, int* output_addr) {
@@ -112,10 +130,13 @@ void setup() {
   clearRegisters();
   writeRegisters();
 
-  // Buttons
+  pinMode(A0, INPUT);   
+  pinMode(A1, INPUT);   
+
+  // Preset statuses' buttons
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
   // Below values need to be recalibrated for different prototypes
-  buttonSet1.registerKey(1, 0); // button for CB manual close
+  buttonSet1.registerKey(1, 8); // button for CB manual close
   buttonSet1.registerKey(2, 288); // button for CB manual open
   buttonSet1.registerKey(3, 563); // button for racked in
   buttonSet1.registerKey(4, 688); // button for racked out
@@ -125,6 +146,20 @@ void setup() {
   buttonSet1.registerKey(8, 882); // button for earth switch open
   buttonSet1.registerKey(9, 910); // button for trip circuit supervision normal
   buttonSet1.registerKey(10, 944); // button for trip circuit supervision fault
+
+  // Generic statuses' buttons
+  buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
+  // Below values are uncalibrated (placeholders)
+  buttonSet2.registerKey(11, 8); 
+  buttonSet2.registerKey(12, 288);
+  buttonSet2.registerKey(13, 563);
+  buttonSet2.registerKey(14, 688); 
+  buttonSet2.registerKey(15, 760); 
+  buttonSet2.registerKey(16, 807);
+  buttonSet2.registerKey(17, 845); 
+  buttonSet2.registerKey(18, 882); 
+  buttonSet2.registerKey(19, 910); 
+  buttonSet2.registerKey(20, 944); 
 }
 
 void loop() {
@@ -163,6 +198,42 @@ void loop() {
       break;   
   }
 
+  // Buttons for generic statuses
+  unsigned char key2 = buttonSet2.getKey();
+  switch (key2) {
+    case 11:
+      generic_status_switch1 = CLOSED;
+      break;
+    case 12:
+      generic_status_switch1 = OPEN;
+      break;
+    case 13:
+      generic_status_switch2 = CLOSED;
+      break;
+    case 14:
+      generic_status_switch2 = OPEN;
+      break;
+    case 15:
+      generic_status_switch3 = CLOSED;
+      break;
+    case 16:
+      generic_status_switch3 = OPEN;
+      break;      
+    case 17:
+      generic_status_switch4 = CLOSED;
+      break;
+    case 18:
+      generic_status_switch4 = OPEN;
+      break;      
+    case 19:
+      generic_status_switch5 = CLOSED;
+      break;
+    case 20:
+      generic_status_switch5 = OPEN;
+      break;   
+  }
+
+
   int trip_signal = digitalRead(trip_input);
   int auxiliary_signal = digitalRead(auxiliary_ref_input);
   if (trip_signal == HIGH) {  
@@ -197,8 +268,12 @@ void loop() {
   setRegisterPin(6, auxiliary_52B_output);
   setRegisterPin(7, auxiliary_52A_output);
   setRegisterPin(8, LOW);
-  setRegisterPin(9, LOW);
-  setRegisterPin(10, LOW);
+  setRegisterPin(9, generic_status_output1);
+  setRegisterPin(10, generic_status_output2);
+  setRegisterPin(11, generic_status_output3);
+  setRegisterPin(12, generic_status_output4);
+  setRegisterPin(13, generic_status_output5);
+
   writeRegisters();
   
 }
