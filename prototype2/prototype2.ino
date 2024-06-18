@@ -19,6 +19,10 @@ enum State {OPEN, CLOSED};
 #define supervision_ref_input 6
 #define service_position_ref_input 7  
 #define generic_ref_input1 8
+#define generic_ref_input2 16
+#define generic_ref_input3 17
+#define generic_ref_input4 18
+#define generic_ref_input5 19
 
 // define shift register pins and variables
 #define data_pin 11  //pin 14 DS
@@ -40,6 +44,10 @@ State earth_switch = CLOSED;
 State supervision_status_switch = CLOSED;   // closed for normal, open for fault
 State service_position_switch = CLOSED;   // closed for racked in, open for racked out
 State generic_status_switch1 = CLOSED;
+State generic_status_switch2 = CLOSED;
+State generic_status_switch3 = CLOSED;
+State generic_status_switch4 = CLOSED;
+State generic_status_switch5 = CLOSED;
   
 // Define output signals
 int auxiliary_52A_output;
@@ -49,6 +57,10 @@ int gas_pressure_status_output;
 int earth_switch_status_output;
 int supervision_status_output;
 int generic_status_output1;
+int generic_status_output2;
+int generic_status_output3;
+int generic_status_output4;
+int generic_status_output5;
 
 // Set status output value based on reference input, switch position
 void setStatusOutput(int ref_input, State switch, int output){
@@ -106,6 +118,10 @@ void setup() {
   pinMode(supervision_ref_input, INPUT);
   pinMode(service_position_ref_input, INPUT);
   pinMode(generic_ref_input1, INPUT);
+  pinMode(generic_ref_input2, INPUT);
+  pinMode(generic_ref_input3, INPUT);
+  pinMode(generic_ref_input4, INPUT);
+  pinMode(generic_ref_input5, INPUT);
 
   // Shift register pins
   pinMode(latch_pin, OUTPUT);
@@ -189,20 +205,28 @@ void loop() {
       generic_status_switch1 = OPEN;
       break;
     case 3:
+      generic_status_switch2 = CLOSED;
       break;
     case 4:
+      generic_status_switch2 = OPEN;
       break;
     case 5:
+      generic_status_switch3 = CLOSED;
       break;
     case 6:
+      generic_status_switch3 = OPEN;
       break;      
     case 7:
+      generic_status_switch4 = CLOSED;
       break;
     case 8:
+      generic_status_switch4 = OPEN;
       break;      
     case 9:
+      generic_status_switch5 = CLOSED;
       break;
     case 10:
+      generic_status_switch5 = OPEN;
       break;   
   }
 
@@ -230,9 +254,13 @@ void loop() {
   setStatusOutput(supervision_ref_input, supervision_status_switch, supervision_status_output);
   setStatusOutput(service_position_ref_input, service_position_switch, service_position_status_output);
   setStatusOutput(generic_ref_input1, generic_status_switch1, generic_status_output1);
+  setStatusOutput(generic_ref_input2, generic_status_switch2, generic_status_output2);
+  setStatusOutput(generic_ref_input3, generic_status_switch3, generic_status_output3);
+  setStatusOutput(generic_ref_input4, generic_status_switch4, generic_status_output4);
+  setStatusOutput(generic_ref_input5, generic_status_switch5, generic_status_output5);
 
   // outputs into shift register
-  setRegisterPin(0, LOW);
+  setRegisterPin(0, LOW); 
   setRegisterPin(1, LOW);
   setRegisterPin(2, supervision_status_output);
   setRegisterPin(3, earth_switch_status_output);
@@ -242,7 +270,10 @@ void loop() {
   setRegisterPin(7, auxiliary_52A_output);
   setRegisterPin(8, LOW);
   setRegisterPin(9, generic_status_output1);
-  setRegisterPin(10, LOW);
+  setRegisterPin(10, generic_status_output2);
+  setRegisterPin(11, generic_status_output3);
+  setRegisterPin(12, generic_status_output4);
+  setRegisterPin(13, generic_status_output5);
   writeRegisters();
   
 }
