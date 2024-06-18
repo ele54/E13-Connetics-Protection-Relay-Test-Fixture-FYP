@@ -150,22 +150,22 @@ void setup() {
   // Generic statuses' buttons
   buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
   // Below values are uncalibrated (placeholders)
-  buttonSet2.registerKey(11, 8); 
-  buttonSet2.registerKey(12, 288);
-  buttonSet2.registerKey(13, 563);
-  buttonSet2.registerKey(14, 688); 
-  buttonSet2.registerKey(15, 760); 
-  buttonSet2.registerKey(16, 807);
-  buttonSet2.registerKey(17, 845); 
-  buttonSet2.registerKey(18, 882); 
-  buttonSet2.registerKey(19, 910); 
-  buttonSet2.registerKey(20, 944); 
+  buttonSet2.registerKey(1, 8); 
+  buttonSet2.registerKey(2, 288);
+  buttonSet2.registerKey(3, 563);
+  buttonSet2.registerKey(4, 688); 
+  buttonSet2.registerKey(5, 760); 
+  buttonSet2.registerKey(6, 807);
+  buttonSet2.registerKey(7, 845); 
+  buttonSet2.registerKey(8, 882); 
+  buttonSet2.registerKey(9, 910); 
+  buttonSet2.registerKey(10, 944); 
 }
 
 void loop() {
   // Process buttons
-  unsigned char button1 = buttonSet1.getKey();
-  switch (button1) {
+  unsigned char key1 = buttonSet1.getKey();
+  switch (key1) {
     case 1:
       CB_status = CLOSED;
       break;
@@ -201,34 +201,34 @@ void loop() {
   // Buttons for generic statuses
   unsigned char key2 = buttonSet2.getKey();
   switch (key2) {
-    case 11:
+    case 1:
       generic_status_switch1 = CLOSED;
       break;
-    case 12:
+    case 2:
       generic_status_switch1 = OPEN;
       break;
-    case 13:
+    case 3:
       generic_status_switch2 = CLOSED;
       break;
-    case 14:
+    case 4:
       generic_status_switch2 = OPEN;
       break;
-    case 15:
+    case 5:
       generic_status_switch3 = CLOSED;
       break;
-    case 16:
+    case 6:
       generic_status_switch3 = OPEN;
       break;      
-    case 17:
+    case 7:
       generic_status_switch4 = CLOSED;
       break;
-    case 18:
+    case 8:
       generic_status_switch4 = OPEN;
       break;      
-    case 19:
+    case 9:
       generic_status_switch5 = CLOSED;
       break;
-    case 20:
+    case 10:
       generic_status_switch5 = OPEN;
       break;   
   }
