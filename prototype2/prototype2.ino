@@ -29,7 +29,8 @@ enum State {OPEN, CLOSED};
 boolean registers[numOfRegisterPins];
 
 // analog pins are A0(14) to A5(19)
-ezAnalogKeypad buttonSet1(A0);   // Generic name can be changed
+ezAnalogKeypad buttonSet1(A0);  // Preset CB status buttons
+ezAnalogKeypad buttonSet2(A1);  // Currently used as generic statuses' buttons
 
 // CB status 
 State CB_status = CLOSED;  
@@ -102,9 +103,9 @@ void setup() {
   clearRegisters();
   writeRegisters();
 
-  // Buttons
+  // Preset statuses' buttons
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
-  // Below values need to be recalibrated for different prototypes
+  // Below values need to be recalibrated for different prototypes according to resistor values
   buttonSet1.registerKey(1, 0); // button for CB manual close
   buttonSet1.registerKey(2, 288); // button for CB manual open
   buttonSet1.registerKey(3, 563); // button for racked in
@@ -115,12 +116,26 @@ void setup() {
   buttonSet1.registerKey(8, 882); // button for earth switch open
   buttonSet1.registerKey(9, 910); // button for trip circuit supervision normal
   buttonSet1.registerKey(10, 944); // button for trip circuit supervision fault
+
+  // Generic statuses' buttons
+  buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
+  // Below values are uncalibrated (placeholders)
+  buttonSet2.registerKey(1, 0); 
+  buttonSet2.registerKey(2, 288);
+  buttonSet2.registerKey(3, 563);
+  buttonSet2.registerKey(4, 688); 
+  buttonSet2.registerKey(5, 760); 
+  buttonSet2.registerKey(6, 807);
+  buttonSet2.registerKey(7, 845); 
+  buttonSet2.registerKey(8, 882); 
+  buttonSet2.registerKey(9, 910); 
+  buttonSet2.registerKey(10, 944); 
 }
 
 void loop() {
   // Process buttons
-  unsigned char button1 = buttonSet1.getKey();
-  switch (button1) {
+  unsigned char key1 = buttonSet1.getKey();
+  switch (key1) {
     case 1:
       CB_status = CLOSED;
       break;
@@ -153,6 +168,31 @@ void loop() {
       break;   
   }
   // Buttons for generic statuses
+  unsigned char key2 = buttonSet2.getKey();
+  switch (key2) {
+    case 1:
+      generic_status_switch1 = CLOSED;
+      break;
+    case 2:
+      generic_status_switch1 = OPEN;
+      break;
+    case 3:
+      break;
+    case 4:
+      break;
+    case 5:
+      break;
+    case 6:
+      break;      
+    case 7:
+      break;
+    case 8:
+      break;      
+    case 9:
+      break;
+    case 10:
+      break;   
+  }
 
   int trip_signal = digitalRead(trip_input);
   int auxiliary_signal = digitalRead(auxiliary_ref_input);
