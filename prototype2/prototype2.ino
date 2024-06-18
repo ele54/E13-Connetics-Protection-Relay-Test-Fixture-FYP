@@ -18,8 +18,9 @@ enum State {OPEN, CLOSED};
 #define earth_switch_ref_input 5
 #define supervision_ref_input 6
 #define service_position_ref_input 7  
+#define generic_ref_input1 8
 
-// define shift register pins
+// define shift register pins and variables
 #define data_pin 11  //pin 14 DS
 #define latch_pin 12 //pin 12 SHCP
 #define clock_pin 13  //pin 11 SH_CP
@@ -32,11 +33,12 @@ ezAnalogKeypad buttonSet1(A0);   // Generic name can be changed
 
 // CB status 
 State CB_status = CLOSED;  
-// CB internal status switches
+// CB internal status switches - need to be checked against schematic
 State gas_pressure_switch = CLOSED;   // closed for normal, open for low
 State earth_switch = CLOSED;  
 State supervision_status_switch = CLOSED;   // closed for normal, open for fault
-State service_position_switch = CLOSED;   // closed for racked in, open for racked out 
+State service_position_switch = CLOSED;   // closed for racked in, open for racked out
+State generic_status_switch1 = CLOSED;
   
 // Define output signals
 int auxiliary_52A_output;
@@ -45,6 +47,7 @@ int service_position_status_output;
 int gas_pressure_status_output;
 int earth_switch_status_output;
 int supervision_status_output;
+int generic_status_output1;
 
 //set all register pins to LOW
 void clearRegisters(){
@@ -89,8 +92,9 @@ void setup() {
   pinMode(earth_switch_ref_input, INPUT);
   pinMode(supervision_ref_input, INPUT);
   pinMode(service_position_ref_input, INPUT);
+  pinMode(generic_ref_input1, INPUT);
 
-  // Shift register
+  // Shift register pins
   pinMode(latch_pin, OUTPUT);
   pinMode(clock_pin, OUTPUT);
   pinMode(data_pin, OUTPUT);
@@ -148,6 +152,7 @@ void loop() {
       supervision_status_switch = OPEN;
       break;   
   }
+  // Buttons for generic statuses
 
   int trip_signal = digitalRead(trip_input);
   int auxiliary_signal = digitalRead(auxiliary_ref_input);
@@ -198,10 +203,19 @@ void loop() {
   int service_position_ref_signal = digitalRead(service_position_ref_input);
   switch (service_position_switch) {
     case CLOSED:
-      service_position_status_output = service_position_ref_input;
+      service_position_status_output = service_position_ref_signal;
       break;
     case OPEN:
-      service_position_status_output = !service_position_ref_input;
+      service_position_status_output = !service_position_ref_signal;
+  }
+
+  int generic_ref_signal1 = digitalRead(generic_ref_input1);
+  switch (generic_status_switch1) {
+    case CLOSED:
+      generic_status_output1 = generic_ref_signal1;
+      break;
+    case OPEN:
+      generic_status_output1 = !generic_ref_signal1;
   }
 
   // outputs into shift register
@@ -214,7 +228,7 @@ void loop() {
   setRegisterPin(6, auxiliary_52B_output);
   setRegisterPin(7, auxiliary_52A_output);
   setRegisterPin(8, LOW);
-  setRegisterPin(9, LOW);
+  setRegisterPin(9, generic_status_output1);
   setRegisterPin(10, LOW);
   writeRegisters();
   
