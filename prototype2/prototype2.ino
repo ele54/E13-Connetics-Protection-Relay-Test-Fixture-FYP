@@ -249,6 +249,7 @@ void loop() {
       break;
   }
 
+  // Set outputs based on button presses
   setStatusOutput(gas_pressure_ref_input, gas_pressure_switch, gas_pressure_status_output);
   setStatusOutput(earth_switch_ref_input, earth_switch, earth_switch_status_output);
   setStatusOutput(supervision_ref_input, supervision_status_switch, supervision_status_output);
