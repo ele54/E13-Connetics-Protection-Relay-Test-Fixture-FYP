@@ -41,7 +41,8 @@ boolean registers[numOfRegisterPins];
 
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   // Preset CB status buttons
-ezAnalogKeypad buttonSet2(A1);  // Currently used as generic statuses' buttons
+ezAnalogKeypad buttonSet2(A1);  // More buttons
+ezAnalogKeypad buttonSet3(A2);  // Generic statuses' buttons
 
 // CB status 
 State CB_status = CLOSED;  
@@ -63,7 +64,8 @@ int service_position_status_output;
 int gas_pressure_status_output;
 int earth_switch_status_output;
 int supervision_status_output;
-int generic_status_output1;
+// int spring_status_output;
+// int generic_status_output1;
 // int generic_status_output2;
 // int generic_status_output3;
 // int generic_status_output4;
@@ -185,7 +187,7 @@ void setup() {
   buttonSet1.registerKey(9, 910); // button for trip circuit supervision normal
   buttonSet1.registerKey(10, 944); // button for trip circuit supervision fault
 
-  // Generic statuses' buttons
+  // More status buttons
   buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
   // Below values are uncalibrated (placeholders)
   buttonSet2.registerKey(1, 8); 
@@ -197,7 +199,21 @@ void setup() {
   buttonSet2.registerKey(7, 845); 
   buttonSet2.registerKey(8, 882); 
   buttonSet2.registerKey(9, 910); 
-  buttonSet2.registerKey(10, 944); 
+  buttonSet2.registerKey(10, 944);   
+  
+  // Generic statuses' buttons
+  buttonSet3.setNoPressValue(1023);  // analog value when no button is pressed
+  // Below values are uncalibrated (placeholders)
+  buttonSet3.registerKey(1, 8); 
+  buttonSet3.registerKey(2, 288);
+  buttonSet3.registerKey(3, 563);
+  buttonSet3.registerKey(4, 688); 
+  buttonSet3.registerKey(5, 760); 
+  buttonSet3.registerKey(6, 807);
+  buttonSet3.registerKey(7, 845); 
+  buttonSet3.registerKey(8, 882); 
+  buttonSet3.registerKey(9, 910); 
+  buttonSet3.registerKey(10, 944); 
 }
 
 void loop() {
@@ -236,8 +252,43 @@ void loop() {
       break;   
   }
 
-  // Buttons for generic statuses
+  // Buttons for more statuses
   unsigned char key2 = buttonSet2.getKey();
+  switch (key2) {
+    case 1:
+      spring_status_switch = CLOSED;
+      break;
+    case 2:
+      spring_status_switch = OPEN;
+      break;
+    // case 3:
+    //   generic_status_switch2 = CLOSED;
+    //   break;
+    // case 4:
+    //   generic_status_switch2 = OPEN;
+    //   break;
+    // case 5:
+    //   generic_status_switch3 = CLOSED;
+    //   break;
+    // case 6:
+    //   generic_status_switch3 = OPEN;
+    //   break;      
+    // case 7:
+    //   generic_status_switch4 = CLOSED;
+    //   break;
+    // case 8:
+    //   generic_status_switch4 = OPEN;
+    //   break;      
+    // case 9:
+    //   generic_status_switch5 = CLOSED;
+    //   break;
+    // case 10:
+    //   generic_status_switch5 = OPEN;
+    //   break;   
+  }
+  
+  // Buttons for generic statuses
+  unsigned char key3 = buttonSet3.getKey();
   switch (key2) {
     case 1:
       generic_status_switch1 = CLOSED;
@@ -296,6 +347,7 @@ void loop() {
   setStatusOutput(earth_switch_ref_input, earth_switch, &earth_switch_status_output);
   setStatusOutput(supervision_ref_input, supervision_status_switch, &supervision_status_output);
   setStatusOutput(service_position_ref_input, service_position_switch, &service_position_status_output);
+  // setStatusOutput(spring_ref_input, spring_status_switch, &spring_status_output);
   // setStatusOutput(generic_ref_input1, generic_status_switch1, &generic_status_output1);
   // setStatusOutput(generic_ref_input2, generic_status_switch2, &generic_status_output2);
   // setStatusOutput(generic_ref_input3, generic_status_switch3, &generic_status_output3);
@@ -305,7 +357,7 @@ void loop() {
 
   // outputs into shift register
   setRegisterPin(0, LOW);
-  setRegisterPin(1, LOW);
+  // setRegisterPin(1, spring_status_output);
   setRegisterPin(2, supervision_status_output);
   setRegisterPin(3, earth_switch_status_output);
   setRegisterPin(4, gas_pressure_status_output);
