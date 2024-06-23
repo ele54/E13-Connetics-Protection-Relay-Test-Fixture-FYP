@@ -9,6 +9,8 @@ Prototype 2:
 
 // Defines to make code more readable
 enum State {OPEN, CLOSED};
+bool timer_running = 0; // Timer for spring charged status re-charging
+int start_time;
 
 // digital pins are 2 to 13
 #define trip_input 2
@@ -24,7 +26,7 @@ byte gas_pressure_ref_input = 3;
 byte earth_switch_ref_input = 4;
 byte supervision_ref_input = 5;
 byte service_position_ref_input = 6;
-// byte spring_ref_input = 7;
+byte spring_ref_input = 7;
 // byte generic_ref_input1 = 8;
 // byte generic_ref_input2 = 9;
 // byte generic_ref_input3 = 10;
@@ -51,7 +53,7 @@ State gas_pressure_switch = CLOSED;   // closed for gas low, open for gas normal
 State earth_switch = CLOSED;  
 State supervision_status_switch = CLOSED;   // closed for normal, open for fault
 State service_position_switch = CLOSED;   // closed for racked in, open for racked out 
-// State spring_status_switch = CLOSED;   // closed for charged, open for discharged
+State spring_status_switch = CLOSED;   // closed for charged, open for discharged
 State generic_status_switch2 = CLOSED;
 State generic_status_switch3 = CLOSED;
 State generic_status_switch4 = CLOSED;
@@ -64,7 +66,7 @@ int service_position_status_output;
 int gas_pressure_status_output;
 int earth_switch_status_output;
 int supervision_status_output;
-// int spring_status_output;
+int spring_status_output;
 // int generic_status_output1;
 // int generic_status_output2;
 // int generic_status_output3;
@@ -287,40 +289,40 @@ void loop() {
     //   break;   
   }
   
-  // Buttons for generic statuses
-  unsigned char key3 = buttonSet3.getKey();
-  switch (key2) {
-    case 1:
-      generic_status_switch1 = CLOSED;
-      break;
-    case 2:
-      generic_status_switch1 = OPEN;
-      break;
-    case 3:
-      generic_status_switch2 = CLOSED;
-      break;
-    case 4:
-      generic_status_switch2 = OPEN;
-      break;
-    case 5:
-      generic_status_switch3 = CLOSED;
-      break;
-    case 6:
-      generic_status_switch3 = OPEN;
-      break;      
-    case 7:
-      generic_status_switch4 = CLOSED;
-      break;
-    case 8:
-      generic_status_switch4 = OPEN;
-      break;      
-    case 9:
-      generic_status_switch5 = CLOSED;
-      break;
-    case 10:
-      generic_status_switch5 = OPEN;
-      break;   
-  }
+  // // Buttons for generic statuses
+  // unsigned char key3 = buttonSet3.getKey();
+  // switch (key2) {
+  //   case 1:
+  //     generic_status_switch1 = CLOSED;
+  //     break;
+  //   case 2:
+  //     generic_status_switch1 = OPEN;
+  //     break;
+  //   case 3:
+  //     generic_status_switch2 = CLOSED;
+  //     break;
+  //   case 4:
+  //     generic_status_switch2 = OPEN;
+  //     break;
+  //   case 5:
+  //     generic_status_switch3 = CLOSED;
+  //     break;
+  //   case 6:
+  //     generic_status_switch3 = OPEN;
+  //     break;      
+  //   case 7:
+  //     generic_status_switch4 = CLOSED;
+  //     break;
+  //   case 8:
+  //     generic_status_switch4 = OPEN;
+  //     break;      
+  //   case 9:
+  //     generic_status_switch5 = CLOSED;
+  //     break;
+  //   case 10:
+  //     generic_status_switch5 = OPEN;
+  //     break;   
+  // }
 
   ref_inputs = shiftIn(in_latch_pin, in_clock_pin, in_data_pin);
 
@@ -336,10 +338,22 @@ void loop() {
     case OPEN:
       auxiliary_52A_output = !auxiliary_signal; // open = output opposite of input signal
       auxiliary_52B_output = auxiliary_signal; // closed = connect output to the input signal
+      spring_status_switch = OPEN;
       break;
     case CLOSED:
       auxiliary_52A_output = auxiliary_signal;
       auxiliary_52B_output = !auxiliary_signal;
+      if (spring_status_switch == OPEN) {
+        if (timer_running) {
+          if ((millis() - start_time) >= 4000) {
+            spring_status_switch = CLOSED;  // if 4 seconds have passed since CB closed, spring finishes charging
+            timer_running = 0;
+          }
+        } else {
+          start_time = millis();    // start timer
+          timer_running = 1;
+        }
+      }
       break;
   }
 
@@ -347,7 +361,7 @@ void loop() {
   setStatusOutput(earth_switch_ref_input, earth_switch, &earth_switch_status_output);
   setStatusOutput(supervision_ref_input, supervision_status_switch, &supervision_status_output);
   setStatusOutput(service_position_ref_input, service_position_switch, &service_position_status_output);
-  // setStatusOutput(spring_ref_input, spring_status_switch, &spring_status_output);
+  setStatusOutput(spring_ref_input, spring_status_switch, &spring_status_output);
   // setStatusOutput(generic_ref_input1, generic_status_switch1, &generic_status_output1);
   // setStatusOutput(generic_ref_input2, generic_status_switch2, &generic_status_output2);
   // setStatusOutput(generic_ref_input3, generic_status_switch3, &generic_status_output3);
@@ -357,7 +371,7 @@ void loop() {
 
   // outputs into shift register
   setRegisterPin(0, LOW);
-  // setRegisterPin(1, spring_status_output);
+  setRegisterPin(1, spring_status_output);
   setRegisterPin(2, supervision_status_output);
   setRegisterPin(3, earth_switch_status_output);
   setRegisterPin(4, gas_pressure_status_output);
