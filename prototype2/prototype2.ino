@@ -19,30 +19,20 @@ enum State {OPEN, CLOSED};
 #define in_latch_pin 4  // pin 9 PE
 #define in_clock_pin 5  // pin 10 CP
 
-// #define auxiliary_ref_input 3
-// #define gas_pressure_ref_input 4
-// #define earth_switch_ref_input 5
-// #define supervision_ref_input 6
-// #define service_position_ref_input 7 
-// #define generic_ref_input1 8
-// #define generic_ref_input2 16
-// #define generic_ref_input3 17
-// #define generic_ref_input4 18
-// #define generic_ref_input5 19
+uint16_t ref_inputs = B1111111111111111;
 
-byte ref_inputs = B11111111;
-
-byte auxiliary_ref_input = 2;
-byte gas_pressure_ref_input = 3;
-byte earth_switch_ref_input = 4;
-byte supervision_ref_input = 5;
-byte service_position_ref_input = 6;
-byte spring_ref_input = 7;
-// byte generic_ref_input1 = 8;
-// byte generic_ref_input2 = 9;
-// byte generic_ref_input3 = 10;
-// byte generic_ref_input4 = 11;
-// byte generic_ref_input5 = 12;
+// these are what which bit of the shift register is connected to
+#define auxiliary_ref_input = 2;
+#define gas_pressure_ref_input = 3;
+#define earth_switch_ref_input = 4;
+#define supervision_ref_input = 5;
+#define service_position_ref_input = 6;
+#define spring_ref_input = 7;
+// #define generic_ref_input1 = 8;
+// #define generic_ref_input2 = 9;
+// #define generic_ref_input3 = 10;
+// #define generic_ref_input4 = 11;
+// #define generic_ref_input5 = 12;
 
 // SIPO shift register pins and variables
 #define out_data_pin 11  //pin 14 DS
@@ -91,18 +81,20 @@ boolean getBit(byte data_in, byte desired_bit) {
 }
 
 // Load byte in from shift register
-byte shiftIn(int latch_pin, int clock_pin, int data_pin) {
+// Code adapted from https://forums.adafruit.com/viewtopic.php?t=41906
+uint16_t shiftIn(int latch_pin, int clock_pin, int data_pin) {
   // Pulse to load data
   digitalWrite(latch_pin, HIGH);
-  delay(20);
-  digitalWrite(latch_pin, LOW);
 
   int pin_state = 0;
-  byte data_in = 0;
+  uint16_t data_in = 0;
 
-  for (int i = 7; i >= 0; i--) {
+  for (int i = 0; i < 16; i++) {
+    digitalWrite(clock_pin, HIGH);
     digitalWrite(clock_pin, LOW);
-    delay(0.2);
+
+    if (i == 0) digitalWrite(latchPin, LOW);
+
     pin_state = digitalRead(data_pin);
     if (pin_state == HIGH) {
       data_in = data_in | (1 << i);
@@ -111,7 +103,6 @@ byte shiftIn(int latch_pin, int clock_pin, int data_pin) {
   }
   return data_in;
 }
-
 
 // Set status output value based on reference input, switch position
 void setStatusOutput(int ref_input, State switch_position, int* output_addr) {
@@ -125,7 +116,6 @@ void setStatusOutput(int ref_input, State switch_position, int* output_addr) {
       break;
   }
 }
-
 
 //set all register pins to LOW
 void clearRegisters(){
@@ -173,7 +163,8 @@ void setup() {
   pinMode(in_latch_pin, OUTPUT);
   pinMode(in_clock_pin, OUTPUT);
   pinMode(in_data_pin, INPUT);
-
+  digitalWrite(in_latch_pin, LOW);
+  digitalWrite(in_clock_pin, LOW);
 
   // Out shift register
   pinMode(out_latch_pin, OUTPUT);
