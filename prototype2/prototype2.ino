@@ -13,22 +13,42 @@ enum State {OPEN, CLOSED};
 // I/O pins
 // can use digital pins 2 to 13
 #define trip_input 2
-#define auxiliary_ref_input 3
-#define gas_pressure_ref_input 4
-#define earth_switch_ref_input 5
-#define supervision_ref_input 6
-#define service_position_ref_input 7 
-#define generic_ref_input1 8
-#define generic_ref_input2 16
-#define generic_ref_input3 17
-#define generic_ref_input4 18
-#define generic_ref_input5 19
 
+// PISO shift register pins and variables
+#define in_data_pin 3 // pin 3 serial out
+#define in_latch_pin 4  // pin 9 PE
+#define in_clock_pin 5  // pin 10 CP
 
-// define shift register pins and variables
-#define data_pin 11  //pin 14 DS
-#define latch_pin 12 //pin 12 ST_CP
-#define clock_pin 13  //pin 11 SH_CP
+// #define auxiliary_ref_input 3
+// #define gas_pressure_ref_input 4
+// #define earth_switch_ref_input 5
+// #define supervision_ref_input 6
+// #define service_position_ref_input 7 
+// #define generic_ref_input1 8
+// #define generic_ref_input2 16
+// #define generic_ref_input3 17
+// #define generic_ref_input4 18
+// #define generic_ref_input5 19
+
+byte ref_inputs = B11111111;
+
+byte auxiliary_ref_input = 2;
+byte gas_pressure_ref_input = 3;
+byte earth_switch_ref_input = 4;
+byte supervision_ref_input = 5;
+byte service_position_ref_input = 6;
+byte spring_ref_input = 7;
+// byte generic_ref_input1 = 8;
+// byte generic_ref_input2 = 9;
+// byte generic_ref_input3 = 10;
+// byte generic_ref_input4 = 11;
+// byte generic_ref_input5 = 12;
+
+// SIPO shift register pins and variables
+#define out_data_pin 11  //pin 14 DS
+#define out_latch_pin 12 //pin 12 ST_CP
+#define out_clock_pin 13  //pin 11 SH_CP
+
 #define number_of_74hc595s 2
 #define numOfRegisterPins number_of_74hc595s * 8
 boolean registers[numOfRegisterPins];
@@ -63,10 +83,39 @@ int generic_status_output3;
 int generic_status_output4;
 int generic_status_output5;
 
+// Get bit from byte received from shift register
+boolean getBit(byte data_in, byte desired_bit) {
+  boolean bit_state;
+  bit_state = data_in & (1 << desired_bit);
+  return bit_state;
+}
+
+// Load byte in from shift register
+byte shiftIn(int latch_pin, int clock_pin, int data_pin) {
+  // Pulse to load data
+  digitalWrite(latch_pin, HIGH);
+  delay(20);
+  digitalWrite(latch_pin, LOW);
+
+  int pin_state = 0;
+  byte data_in = 0;
+
+  for (int i = 7; i >= 0; i--) {
+    digitalWrite(clock_pin, LOW);
+    delay(0.2);
+    pin_state = digitalRead(data_pin);
+    if (pin_state == HIGH) {
+      data_in = data_in | (1 << i);
+    }
+    digitalWrite(clock_pin, HIGH);
+  }
+  return data_in;
+}
+
 
 // Set status output value based on reference input, switch position
 void setStatusOutput(int ref_input, State switch_position, int* output_addr) {
-  int ref_signal = digitalRead(ref_input);
+  int ref_signal = getBit(ref_inputs, ref_input);
   switch (switch_position) {
     case CLOSED:
       *output_addr = ref_signal;
@@ -83,12 +132,11 @@ void clearRegisters(){
   for(int i = numOfRegisterPins - 1; i >=  0; i--){
      registers[i] = LOW;
   }
-  writeRegisters();
 } 
 
 //Set and display registers
 //Only call AFTER all values are set how you would like (slow otherwise)
-void writeRegisters(){
+void writeRegisters(int latch_pin, int clock_pin, int data_pin) {
 
   digitalWrite(latch_pin, LOW);
 
@@ -116,19 +164,24 @@ void setup() {
 
   //input pins
   pinMode(trip_input, INPUT);   
-  pinMode(auxiliary_ref_input, INPUT);
-  pinMode(gas_pressure_ref_input, INPUT);
-  pinMode(earth_switch_ref_input, INPUT);
-  pinMode(supervision_ref_input, INPUT);
-  pinMode(service_position_ref_input, INPUT);
+  // pinMode(auxiliary_ref_input, INPUT);
+  // pinMode(gas_pressure_ref_input, INPUT);
+  // pinMode(earth_switch_ref_input, INPUT);
+  // pinMode(supervision_ref_input, INPUT);
+  // pinMode(service_position_ref_input, INPUT);
+  // In shift register
+  pinMode(in_latch_pin, OUTPUT);
+  pinMode(in_clock_pin, OUTPUT);
+  pinMode(in_data_pin, INPUT);
 
-  // Shift register
-  pinMode(latch_pin, OUTPUT);
-  pinMode(clock_pin, OUTPUT);
-  pinMode(data_pin, OUTPUT);
+
+  // Out shift register
+  pinMode(out_latch_pin, OUTPUT);
+  pinMode(out_clock_pin, OUTPUT);
+  pinMode(out_data_pin, OUTPUT);
   //reset all register pins
   clearRegisters();
-  writeRegisters();
+  writeRegisters(out_latch_pin, out_clock_pin, out_data_pin);
 
   pinMode(A0, INPUT);   
   pinMode(A1, INPUT);   
@@ -233,9 +286,10 @@ void loop() {
       break;   
   }
 
+  ref_inputs = shiftIn(in_latch_pin, in_clock_pin, in_data_pin);
 
   int trip_signal = digitalRead(trip_input);
-  int auxiliary_signal = digitalRead(auxiliary_ref_input);
+  int auxiliary_signal = getBit(ref_inputs, auxiliary_ref_input);
   if (trip_signal == HIGH) {  
     CB_status = OPEN; // would this conflict with manual control
     auxiliary_52A_output = !auxiliary_signal;
@@ -257,11 +311,11 @@ void loop() {
   setStatusOutput(earth_switch_ref_input, earth_switch, &earth_switch_status_output);
   setStatusOutput(supervision_ref_input, supervision_status_switch, &supervision_status_output);
   setStatusOutput(service_position_ref_input, service_position_switch, &service_position_status_output);
-  setStatusOutput(generic_ref_input1, generic_status_switch1, &generic_status_output1);
-  setStatusOutput(generic_ref_input2, generic_status_switch2, &generic_status_output2);
-  setStatusOutput(generic_ref_input3, generic_status_switch3, &generic_status_output3);
-  setStatusOutput(generic_ref_input4, generic_status_switch4, &generic_status_output4);
-  setStatusOutput(generic_ref_input5, generic_status_switch5, &generic_status_output5);
+  // setStatusOutput(generic_ref_input1, generic_status_switch1, &generic_status_output1);
+  // setStatusOutput(generic_ref_input2, generic_status_switch2, &generic_status_output2);
+  // setStatusOutput(generic_ref_input3, generic_status_switch3, &generic_status_output3);
+  // setStatusOutput(generic_ref_input4, generic_status_switch4, &generic_status_output4);
+  // setStatusOutput(generic_ref_input5, generic_status_switch5, &generic_status_output5);
 
 
   // outputs into shift register
@@ -275,12 +329,14 @@ void loop() {
   setRegisterPin(7, auxiliary_52A_output);
   setRegisterPin(8, LOW);
   setRegisterPin(9, LOW);
-  setRegisterPin(10, generic_status_output1);
-  setRegisterPin(11, generic_status_output2);
-  setRegisterPin(12, generic_status_output3);
-  setRegisterPin(13, generic_status_output4);
-  setRegisterPin(14, generic_status_output5);
+  // setRegisterPin(10, generic_status_output1);
+  // setRegisterPin(11, generic_status_output2);
+  // setRegisterPin(12, generic_status_output3);
+  // setRegisterPin(13, generic_status_output4);
+  // setRegisterPin(14, generic_status_output5);
 
-  writeRegisters();
+  writeRegisters(out_latch_pin, out_clock_pin, out_data_pin);
   
+  Serial.println("ref inputs: ");
+  Serial.println(ref_inputs);
 }
