@@ -11,7 +11,7 @@
    NOTE: when no press or press one key/button, the values on Serial Monitor may be NOT consistent, they may be slighly different => use a central value
 */
 
-#define ANALOG_PIN A0
+#define ANALOG_PIN A1
 
 void setup() {
   Serial.begin(9600);

@@ -1,84 +1,55 @@
 /*
 Prototype 2:
 
-  CB status trips based on signal and manual button inputs.
-  shift register code taken from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
-  
+  Code for testing prototype with:
+    two resistor ladders with four buttons each
+    one SIPO 75HC595
+    one PISO CD4014
+  SIPO shift register code adapted from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
+  PISO CD4014 code adapted from https://forums.adafruit.com/viewtopic.php?t=41906
 */
 #include <ezAnalogKeypad.h>
 
 // Defines to make code more readable
 enum State {OPEN, CLOSED};
 
-// I/O pins
-// can use digital pins 2 to 13
-#define trip_input 2
-
-// PISO shift register pins and variables
-#define in_data_pin 3 // pin 3 serial out
+// CD4014 shift register pins and variables
+#define in_data_pin 3 // pin 3 Q8
 #define in_latch_pin 4  // pin 9 PE
 #define in_clock_pin 5  // pin 10 CP
 
-uint16_t ref_inputs = B1111111111111111;
+uint16_t ref_inputs =0;
 
-// these are what which bit of the shift register is connected to
-#define auxiliary_ref_input = 2;
-#define gas_pressure_ref_input = 3;
-#define earth_switch_ref_input = 4;
-#define supervision_ref_input = 5;
-#define service_position_ref_input = 6;
-#define spring_ref_input = 7;
-// #define generic_ref_input1 = 8;
-// #define generic_ref_input2 = 9;
-// #define generic_ref_input3 = 10;
-// #define generic_ref_input4 = 11;
-// #define generic_ref_input5 = 12;
+// these are what which bit of the CD4014 shift register is connected to
+// #define auxiliary_ref_input = 2;
+#define gas_pressure_ref_input 6
+#define earth_switch_ref_input 7
+#define supervision_ref_input 12
+#define service_position_ref_input 14
 
-// SIPO shift register pins and variables
-#define out_data_pin 11  //pin 14 DS
-#define out_latch_pin 12 //pin 12 ST_CP
-#define out_clock_pin 13  //pin 11 SH_CP
+// 74HC595 shift register pins and variables
+#define out_data_pin 6  //pin 14 DS
+#define out_latch_pin 7 //pin 12 ST_CP
+#define out_clock_pin 8  //pin 11 SH_CP
 
 #define number_of_74hc595s 2
 #define numOfRegisterPins number_of_74hc595s * 8
 boolean registers[numOfRegisterPins];
 
+// what each bit of the 74HC595 shift register is (output signals)
+#define gas_pressure_status_output 4
+#define earth_switch_status_output 3
+#define supervision_status_output 2
+#define service_position_status_output 1
+
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   // Preset CB status buttons
 ezAnalogKeypad buttonSet2(A1);  // Currently used as generic statuses' buttons
 
-// CB status 
-State CB_status = CLOSED;  
-// CB internal status switches - need to be checked against schematic
 State gas_pressure_switch = CLOSED;   // closed for normal, open for low
 State earth_switch = CLOSED;  
 State supervision_status_switch = CLOSED;   // closed for normal, open for fault
 State service_position_switch = CLOSED;   // closed for racked in, open for racked out 
-State generic_status_switch1 = CLOSED;
-State generic_status_switch2 = CLOSED;
-State generic_status_switch3 = CLOSED;
-State generic_status_switch4 = CLOSED;
-State generic_status_switch5 = CLOSED;
-
-// Define output signals
-int auxiliary_52A_output;
-int auxiliary_52B_output;
-int service_position_status_output;
-int gas_pressure_status_output;
-int earth_switch_status_output;
-int supervision_status_output;
-int generic_status_output1;
-int generic_status_output2;
-int generic_status_output3;
-int generic_status_output4;
-int generic_status_output5;
-
-// Get bit from byte received from shift register
-boolean getBit(byte data_in, byte desired_bit) {
-  boolean bit_state;
-  bit_state = data_in & (1 << desired_bit);
-  return bit_state;
-}
 
 // Load byte in from shift register
 // Code adapted from https://forums.adafruit.com/viewtopic.php?t=41906
@@ -93,7 +64,7 @@ uint16_t shiftIn(int latch_pin, int clock_pin, int data_pin) {
     digitalWrite(clock_pin, HIGH);
     digitalWrite(clock_pin, LOW);
 
-    if (i == 0) digitalWrite(latchPin, LOW);
+    if (i == 0) digitalWrite(latch_pin, LOW);
 
     pin_state = digitalRead(data_pin);
     if (pin_state == HIGH) {
@@ -104,15 +75,22 @@ uint16_t shiftIn(int latch_pin, int clock_pin, int data_pin) {
   return data_in;
 }
 
+// Get reference signal bit from shift register input
+boolean getBit(byte desired_bit) {
+  boolean bit_state;
+  bit_state = ref_inputs & (1 << desired_bit);
+  return bit_state;
+}
+
 // Set status output value based on reference input, switch position
-void setStatusOutput(int ref_input, State switch_position, int* output_addr) {
-  int ref_signal = getBit(ref_inputs, ref_input);
+void setStatusOutput(byte ref_bit, State switch_position, byte output_bit) {
+  byte ref_signal = getBit(ref_bit);
   switch (switch_position) {
     case CLOSED:
-      *output_addr = ref_signal;
+      setRegisterPin(output_bit, ref_signal);
       break;
     case OPEN:
-      *output_addr = !ref_signal;
+      setRegisterPin(output_bit, !ref_signal);
       break;
   }
 }
@@ -152,13 +130,6 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
 
-  //input pins
-  pinMode(trip_input, INPUT);   
-  // pinMode(auxiliary_ref_input, INPUT);
-  // pinMode(gas_pressure_ref_input, INPUT);
-  // pinMode(earth_switch_ref_input, INPUT);
-  // pinMode(supervision_ref_input, INPUT);
-  // pinMode(service_position_ref_input, INPUT);
   // In shift register
   pinMode(in_latch_pin, OUTPUT);
   pinMode(in_clock_pin, OUTPUT);
@@ -177,33 +148,17 @@ void setup() {
   pinMode(A0, INPUT);   
   pinMode(A1, INPUT);   
 
-  // Preset statuses' buttons
-  buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
-  // Below values need to be recalibrated for different prototypes
-  buttonSet1.registerKey(1, 8); // button for CB manual close
-  buttonSet1.registerKey(2, 288); // button for CB manual open
-  buttonSet1.registerKey(3, 563); // button for racked in
-  buttonSet1.registerKey(4, 688); // button for racked out
-  buttonSet1.registerKey(5, 760); // button for gas pressure normal
-  buttonSet1.registerKey(6, 807); // button for gas pressure low
-  buttonSet1.registerKey(7, 845); // button for earth switch closed
-  buttonSet1.registerKey(8, 882); // button for earth switch open
-  buttonSet1.registerKey(9, 910); // button for trip circuit supervision normal
-  buttonSet1.registerKey(10, 944); // button for trip circuit supervision fault
+  buttonSet1.setNoPressValue(1000);  // analog value when no button is pressed
+  buttonSet1.registerKey(1, 50); // button for gas pressure normal
+  buttonSet1.registerKey(2, 456); // button for gas pressure low
+  buttonSet1.registerKey(3, 619); // button for earth switch closed
+  buttonSet1.registerKey(4, 704); // button for earth switch open
 
-  // Generic statuses' buttons
-  buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
-  // Below values are uncalibrated (placeholders)
-  buttonSet2.registerKey(1, 8); 
-  buttonSet2.registerKey(2, 288);
-  buttonSet2.registerKey(3, 563);
-  buttonSet2.registerKey(4, 688); 
-  buttonSet2.registerKey(5, 760); 
-  buttonSet2.registerKey(6, 807);
-  buttonSet2.registerKey(7, 845); 
-  buttonSet2.registerKey(8, 882); 
-  buttonSet2.registerKey(9, 910); 
-  buttonSet2.registerKey(10, 944); 
+  buttonSet2.setNoPressValue(1000);  // analog value when no button is pressed
+  buttonSet1.registerKey(1, 42); // button for trip circuit supervision normal
+  buttonSet1.registerKey(2, 518); // button for trip circuit supervision fault
+  buttonSet1.registerKey(3, 680); // button for racked in
+  buttonSet1.registerKey(4, 772); // button for racked out
 }
 
 void loop() {
@@ -211,10 +166,27 @@ void loop() {
   unsigned char key1 = buttonSet1.getKey();
   switch (key1) {
     case 1:
-      CB_status = CLOSED;
+      gas_pressure_switch = OPEN;   // Gas normal
       break;
     case 2:
-      CB_status = OPEN;
+      gas_pressure_switch = CLOSED;   // Gas low
+      break;
+    case 3:
+      earth_switch = CLOSED;  
+      break;
+    case 4:
+      earth_switch = OPEN;
+      break;
+  }
+
+  // Buttons for generic statuses
+  unsigned char key2 = buttonSet2.getKey();
+  switch (key2) {
+    case 1:
+      supervision_status_switch = CLOSED;
+      break;
+    case 2:
+      supervision_status_switch = OPEN;
       break;
     case 3:
       service_position_switch = CLOSED;
@@ -222,109 +194,14 @@ void loop() {
     case 4:
       service_position_switch = OPEN;
       break;
-    case 5:
-      gas_pressure_switch = CLOSED;
-      break;
-    case 6:
-      gas_pressure_switch = OPEN;
-      break;      
-    case 7:
-      earth_switch = CLOSED;
-      break;
-    case 8:
-      earth_switch = OPEN;
-      break;      
-    case 9:
-      supervision_status_switch = CLOSED;
-      break;
-    case 10:
-      supervision_status_switch = OPEN;
-      break;   
-  }
-
-  // Buttons for generic statuses
-  unsigned char key2 = buttonSet2.getKey();
-  switch (key2) {
-    case 1:
-      generic_status_switch1 = CLOSED;
-      break;
-    case 2:
-      generic_status_switch1 = OPEN;
-      break;
-    case 3:
-      generic_status_switch2 = CLOSED;
-      break;
-    case 4:
-      generic_status_switch2 = OPEN;
-      break;
-    case 5:
-      generic_status_switch3 = CLOSED;
-      break;
-    case 6:
-      generic_status_switch3 = OPEN;
-      break;      
-    case 7:
-      generic_status_switch4 = CLOSED;
-      break;
-    case 8:
-      generic_status_switch4 = OPEN;
-      break;      
-    case 9:
-      generic_status_switch5 = CLOSED;
-      break;
-    case 10:
-      generic_status_switch5 = OPEN;
-      break;   
   }
 
   ref_inputs = shiftIn(in_latch_pin, in_clock_pin, in_data_pin);
 
-  int trip_signal = digitalRead(trip_input);
-  int auxiliary_signal = getBit(ref_inputs, auxiliary_ref_input);
-  if (trip_signal == HIGH) {  
-    CB_status = OPEN; // would this conflict with manual control
-    auxiliary_52A_output = !auxiliary_signal;
-    auxiliary_52B_output = auxiliary_signal;
-  }
-
-  switch (CB_status) {
-    case OPEN:
-      auxiliary_52A_output = !auxiliary_signal; // open = output opposite of input signal
-      auxiliary_52B_output = auxiliary_signal; // closed = connect output to the input signal
-      break;
-    case CLOSED:
-      auxiliary_52A_output = auxiliary_signal;
-      auxiliary_52B_output = !auxiliary_signal;
-      break;
-  }
-
-  setStatusOutput(gas_pressure_ref_input, gas_pressure_switch, &gas_pressure_status_output);
-  setStatusOutput(earth_switch_ref_input, earth_switch, &earth_switch_status_output);
-  setStatusOutput(supervision_ref_input, supervision_status_switch, &supervision_status_output);
-  setStatusOutput(service_position_ref_input, service_position_switch, &service_position_status_output);
-  // setStatusOutput(generic_ref_input1, generic_status_switch1, &generic_status_output1);
-  // setStatusOutput(generic_ref_input2, generic_status_switch2, &generic_status_output2);
-  // setStatusOutput(generic_ref_input3, generic_status_switch3, &generic_status_output3);
-  // setStatusOutput(generic_ref_input4, generic_status_switch4, &generic_status_output4);
-  // setStatusOutput(generic_ref_input5, generic_status_switch5, &generic_status_output5);
-
-
-  // outputs into shift register
-  setRegisterPin(0, LOW);
-  setRegisterPin(1, LOW);
-  setRegisterPin(2, supervision_status_output);
-  setRegisterPin(3, earth_switch_status_output);
-  setRegisterPin(4, gas_pressure_status_output);
-  setRegisterPin(5, service_position_status_output);
-  setRegisterPin(6, auxiliary_52B_output);
-  setRegisterPin(7, auxiliary_52A_output);
-  setRegisterPin(8, LOW);
-  setRegisterPin(9, LOW);
-  // setRegisterPin(10, generic_status_output1);
-  // setRegisterPin(11, generic_status_output2);
-  // setRegisterPin(12, generic_status_output3);
-  // setRegisterPin(13, generic_status_output4);
-  // setRegisterPin(14, generic_status_output5);
+  setStatusOutput(gas_pressure_ref_input, gas_pressure_switch, gas_pressure_status_output);
+  setStatusOutput(earth_switch_ref_input, earth_switch, earth_switch_status_output);
+  setStatusOutput(supervision_ref_input, supervision_status_switch, supervision_status_output);
+  setStatusOutput(service_position_ref_input, service_position_switch, service_position_status_output);
 
   writeRegisters(out_latch_pin, out_clock_pin, out_data_pin);
   
