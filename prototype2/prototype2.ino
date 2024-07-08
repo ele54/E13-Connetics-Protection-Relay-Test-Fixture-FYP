@@ -18,13 +18,13 @@ enum State {OPEN, CLOSED};
 #define in_latch_pin 4  // pin 9 PE
 #define in_clock_pin 5  // pin 10 CP
 
-uint16_t ref_inputs =0;
+uint16_t ref_inputs = 1;
 
 // these are what which bit of the CD4014 shift register is connected to
 // #define auxiliary_ref_input = 2;
-#define gas_pressure_ref_input 6
-#define earth_switch_ref_input 7
-#define supervision_ref_input 12
+#define gas_pressure_ref_input 7
+#define earth_switch_ref_input 6
+#define supervision_ref_input 15
 #define service_position_ref_input 14
 
 // 74HC595 shift register pins and variables
@@ -60,17 +60,17 @@ uint16_t shiftIn(int latch_pin, int clock_pin, int data_pin) {
   int pin_state = 0;
   uint16_t data_in = 0;
 
-  for (int i = 0; i < 16; i++) {
+  for(int i=0;i<16;i++) {
+    /* clock low-high-low */
     digitalWrite(clock_pin, HIGH);
     digitalWrite(clock_pin, LOW);
 
-    if (i == 0) digitalWrite(latch_pin, LOW);
+    /* if this is the first bit, then we're done with the parallel load */
+    if (i==0) digitalWrite(latch_pin, LOW);
 
-    pin_state = digitalRead(data_pin);
-    if (pin_state == HIGH) {
-      data_in = data_in | (1 << i);
-    }
-    digitalWrite(clock_pin, HIGH);
+    /* shift the new bit in */
+    data_in<<=1;
+    if (digitalRead(data_pin)) data_in|=1;
   }
   return data_in;
 }
@@ -78,7 +78,7 @@ uint16_t shiftIn(int latch_pin, int clock_pin, int data_pin) {
 // Get reference signal bit from shift register input
 boolean getBit(byte desired_bit) {
   boolean bit_state;
-  bit_state = ref_inputs & (1 << desired_bit);
+  bit_state = ref_inputs & (1 << (desired_bit - 1));
   return bit_state;
 }
 
@@ -129,6 +129,8 @@ void setRegisterPin(int index, int value){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
 
   // In shift register
   pinMode(in_latch_pin, OUTPUT);
@@ -149,16 +151,16 @@ void setup() {
   pinMode(A1, INPUT);   
 
   buttonSet1.setNoPressValue(1000);  // analog value when no button is pressed
-  buttonSet1.registerKey(1, 50); // button for gas pressure normal
+  buttonSet1.registerKey(1, 5); // button for gas pressure normal
   buttonSet1.registerKey(2, 456); // button for gas pressure low
   buttonSet1.registerKey(3, 619); // button for earth switch closed
   buttonSet1.registerKey(4, 704); // button for earth switch open
 
   buttonSet2.setNoPressValue(1000);  // analog value when no button is pressed
-  buttonSet1.registerKey(1, 42); // button for trip circuit supervision normal
-  buttonSet1.registerKey(2, 518); // button for trip circuit supervision fault
-  buttonSet1.registerKey(3, 680); // button for racked in
-  buttonSet1.registerKey(4, 772); // button for racked out
+  buttonSet2.registerKey(5, 42); // button for trip circuit supervision normal
+  buttonSet2.registerKey(6, 518); // button for trip circuit supervision fault
+  buttonSet2.registerKey(7, 680); // button for racked in
+  buttonSet2.registerKey(8, 772); // button for racked out
 }
 
 void loop() {
@@ -182,16 +184,16 @@ void loop() {
   // Buttons for generic statuses
   unsigned char key2 = buttonSet2.getKey();
   switch (key2) {
-    case 1:
+    case 5:
       supervision_status_switch = CLOSED;
       break;
-    case 2:
+    case 6:
       supervision_status_switch = OPEN;
       break;
-    case 3:
+    case 7:
       service_position_switch = CLOSED;
       break;
-    case 4:
+    case 8:
       service_position_switch = OPEN;
       break;
   }
@@ -205,6 +207,7 @@ void loop() {
 
   writeRegisters(out_latch_pin, out_clock_pin, out_data_pin);
   
-  Serial.println("ref inputs: ");
-  Serial.println(ref_inputs);
+  // Serial.println("ref inputs: ");
+  // Serial.println(ref_inputs, BIN);
+  delay(200);
 }

@@ -39,6 +39,8 @@ uint16_t read_switches(void)
 void loop() {
   Serial.println("1st byte is...");
   uint16_t data = read_switches();
+  uint16_t data2 = read_switches();
   Serial.println(data, BIN);
+  Serial.println(data2, BIN);
   delay(400);
 }
