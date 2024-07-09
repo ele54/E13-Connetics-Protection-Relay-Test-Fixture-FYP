@@ -12,6 +12,11 @@ Prototype 2:
 
 // Defines to make code more readable
 enum State {OPEN, CLOSED};
+bool timer_running = 0; // Timer for spring charged status re-charging
+unsigned long start_time;
+unsigned char prev_key1 = 0;
+
+#define trip_input 2  // Digital pin used for CB trip
 
 // CD4014 shift register pins and variables
 #define in_data_pin 3 // pin 3 Q8
@@ -21,9 +26,8 @@ enum State {OPEN, CLOSED};
 uint16_t ref_inputs = 1;
 
 // these are what which bit of the CD4014 shift register is connected to
-// #define auxiliary_ref_input = 2;
-#define gas_pressure_ref_input 7
-#define earth_switch_ref_input 6
+#define spring_charge_ref_input 7
+#define auxiliary_ref_input 6
 #define supervision_ref_input 15
 #define service_position_ref_input 14
 
@@ -37,8 +41,9 @@ uint16_t ref_inputs = 1;
 boolean registers[numOfRegisterPins];
 
 // what each bit of the 74HC595 shift register is (output signals)
-#define gas_pressure_status_output 4
-#define earth_switch_status_output 3
+#define spring_charge_status_output 5
+#define auxiliary_52A_output 4
+#define auxiliary_52B_output 3
 #define supervision_status_output 2
 #define service_position_status_output 1
 
@@ -46,8 +51,10 @@ boolean registers[numOfRegisterPins];
 ezAnalogKeypad buttonSet1(A0);   // Preset CB status buttons
 ezAnalogKeypad buttonSet2(A1);  // Currently used as generic statuses' buttons
 
-State gas_pressure_switch = CLOSED;   // closed for normal, open for low
-State earth_switch = CLOSED;  
+State CB_status = CLOSED;  
+State prev_CB_status = CLOSED;  
+State prev_spring_status = CLOSED;  
+State spring_status_switch = CLOSED;   // closed for charged, open for discharged
 State supervision_status_switch = CLOSED;   // closed for normal, open for fault
 State service_position_switch = CLOSED;   // closed for racked in, open for racked out 
 
@@ -166,19 +173,44 @@ void setup() {
 void loop() {
   // Process buttons
   unsigned char key1 = buttonSet1.getKey();
-  switch (key1) {
-    case 1:
-      gas_pressure_switch = OPEN;   // Gas normal
-      break;
-    case 2:
-      gas_pressure_switch = CLOSED;   // Gas low
-      break;
-    case 3:
-      earth_switch = CLOSED;  
-      break;
-    case 4:
-      earth_switch = OPEN;
-      break;
+  if (key1 != prev_key1) {
+    switch (key1) {
+      case 1:
+        if (spring_status_switch != CLOSED) {
+          prev_spring_status = spring_status_switch;
+          spring_status_switch = CLOSED;   // Charged
+        }
+        timer_running = 0;  // Stop auto timer
+        break;
+      case 2:
+        if (spring_status_switch != OPEN) {
+          prev_spring_status = spring_status_switch;
+          spring_status_switch = OPEN;   // Discharged
+        }
+        timer_running = 0;  // Stop auto timer
+        break;
+      case 3:
+        if (CB_status != CLOSED) {
+          prev_CB_status = CB_status;
+          CB_status = CLOSED;  
+        }
+        if ((prev_CB_status == OPEN) && (spring_status_switch == OPEN)) {
+          start_time = millis();    // start timer
+          timer_running = 1;
+          Serial.println("Restart timer: ");
+          Serial.println(start_time);
+        }
+        break;
+      case 4:
+        if (CB_status != OPEN) {
+          prev_CB_status = CB_status;
+          CB_status = OPEN;  
+          prev_spring_status = spring_status_switch;
+          spring_status_switch = OPEN;
+        }      
+        break;
+    }
+    unsigned char prev_key1 = key1;
   }
 
   // Buttons for generic statuses
@@ -200,14 +232,40 @@ void loop() {
 
   ref_inputs = shiftIn(in_latch_pin, in_clock_pin, in_data_pin);
 
-  setStatusOutput(gas_pressure_ref_input, gas_pressure_switch, gas_pressure_status_output);
-  setStatusOutput(earth_switch_ref_input, earth_switch, earth_switch_status_output);
+  int trip_signal = digitalRead(trip_input);
+  int auxiliary_signal = getBit(auxiliary_ref_input);
+  if (trip_signal == HIGH) {  
+    prev_CB_status = CB_status;
+    CB_status = OPEN; 
+    prev_spring_status = spring_status_switch;
+    spring_status_switch = OPEN;
+    setRegisterPin(auxiliary_52A_output, !auxiliary_signal);
+    setRegisterPin(auxiliary_52B_output, auxiliary_signal);
+  }
+
+  switch (CB_status) {
+    case OPEN:
+      setRegisterPin(auxiliary_52A_output, !auxiliary_signal); // open = output opposite of input signal
+      setRegisterPin(auxiliary_52B_output, auxiliary_signal);  // closed = connect output to the input signal
+      break;
+    case CLOSED:
+      setRegisterPin(auxiliary_52A_output, auxiliary_signal);
+      setRegisterPin(auxiliary_52B_output, !auxiliary_signal);
+      if ((spring_status_switch == OPEN) && (timer_running)) {
+        // Serial.println("timer ran for: ");
+        // Serial.println((millis() - start_time));
+        if ((millis() - start_time) >= 4000) {
+          spring_status_switch = CLOSED;  // if 4 seconds have passed since CB closed, spring finishes charging
+          timer_running = 0;
+        }
+      }
+      break;
+  }
+
+  setStatusOutput(spring_charge_ref_input, spring_status_switch, spring_charge_status_output);
   setStatusOutput(supervision_ref_input, supervision_status_switch, supervision_status_output);
   setStatusOutput(service_position_ref_input, service_position_switch, service_position_status_output);
 
   writeRegisters(out_latch_pin, out_clock_pin, out_data_pin);
   
-  // Serial.println("ref inputs: ");
-  // Serial.println(ref_inputs, BIN);
-  delay(200);
 }
