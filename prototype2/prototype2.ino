@@ -12,8 +12,8 @@ Prototype 2:
 
 // Defines to make code more readable
 enum State {OPEN, CLOSED};
-bool timer_running = 0; // Timer for spring charged status re-charging
-unsigned long start_time;
+bool spring_charge_timer_running = 0; // Timer for spring charged status re-charging
+unsigned long spring_charge_start_time;
 unsigned char prev_key1 = 0;
 
 #define trip_input 2  // Digital pin used for CB trip
@@ -180,14 +180,14 @@ void loop() {
           prev_spring_status = spring_status_switch;
           spring_status_switch = CLOSED;   // Charged
         }
-        timer_running = 0;  // Stop auto timer
+        spring_charge_timer_running = 0;  // Stop auto timer
         break;
       case 2:
         if (spring_status_switch != OPEN) {
           prev_spring_status = spring_status_switch;
           spring_status_switch = OPEN;   // Discharged
         }
-        timer_running = 0;  // Stop auto timer
+        spring_charge_timer_running = 0;  // Stop auto timer
         break;
       case 3:
         if (CB_status != CLOSED) {
@@ -195,10 +195,10 @@ void loop() {
           CB_status = CLOSED;  
         }
         if ((prev_CB_status == OPEN) && (spring_status_switch == OPEN)) {
-          start_time = millis();    // start timer
-          timer_running = 1;
+          spring_charge_start_time = millis();    // start timer
+          spring_charge_timer_running = 1;
           Serial.println("Restart timer: ");
-          Serial.println(start_time);
+          Serial.println(spring_charge_start_time);
         }
         break;
       case 4:
@@ -251,12 +251,12 @@ void loop() {
     case CLOSED:
       setRegisterPin(auxiliary_52A_output, auxiliary_signal);
       setRegisterPin(auxiliary_52B_output, !auxiliary_signal);
-      if ((spring_status_switch == OPEN) && (timer_running)) {
+      if ((spring_status_switch == OPEN) && (spring_charge_timer_running)) {
         // Serial.println("timer ran for: ");
         // Serial.println((millis() - start_time));
-        if ((millis() - start_time) >= 4000) {
+        if ((millis() - spring_charge_start_time) >= 4000) {
           spring_status_switch = CLOSED;  // if 4 seconds have passed since CB closed, spring finishes charging
-          timer_running = 0;
+          spring_charge_timer_running = 0;
         }
       }
       break;
