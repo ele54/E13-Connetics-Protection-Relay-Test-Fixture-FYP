@@ -163,6 +163,11 @@ void writeLEDOutputs() {
   LEDregisters[circuit_supervision_status_LED] = circuit_supervision_status_switch;
   LEDregisters[generic_status_LED3] = generic_status_switch3;
   LEDregisters[generic_status_LED4] = generic_status_switch4;
+  serial.println("led register")
+  for(int i = 0; i < 16; i++)
+  {
+    Serial.println(LEDregisters[i]);
+  }
   writeRegisters(LED_latch_pin, LED_clock_pin, LED_data_pin);
 }
 
@@ -221,6 +226,7 @@ void setup() {
 void loop() {
   // Process buttons
   unsigned char key1 = buttonSet1.getKey();
+  Serial.println(key1);
 
   switch (key1) {
     case 1: // CB status: (manual) close
