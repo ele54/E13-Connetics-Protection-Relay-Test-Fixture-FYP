@@ -56,13 +56,20 @@ boolean LEDregisters[numOfLEDRegisterPins];
 #define earth_switch_status_LEDr 7
 #define generic_status_LED1g 6
 
-#define generic_status_LED1r 8
-#define generic_status_LED2 9
-#define service_position_status_LED 11
-#define spring_charge_status_LED 12
-#define circuit_supervision_status_LED 13
-#define generic_status_LED3 14
-#define generic_status_LED4 15
+#define generic_status_LED1r 22
+#define generic_status_LED2g 23
+#define generic_status_LED2r 24
+
+#define service_position_status_LEDg 0
+#define service_position_status_LEDr 15
+#define spring_charge_status_LEDg 14
+#define spring_charge_status_LEDr 13
+#define circuit_supervision_status_LEDg 12
+#define circuit_supervision_status_LEDr 11
+#define generic_status_LED3g 9
+#define generic_status_LED3r 10
+
+#define generic_status_LED4 21
 
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   // Preset CB status buttons
@@ -71,7 +78,7 @@ ezAnalogKeypad buttonSet2(A1);  // Currently used as generic statuses' buttons
 State CB_status = CLOSED;  
 State prev_CB_status = CLOSED;  
 State prev_spring_status = CLOSED;  
-State gas_pressure_switch = CLOSED;   // closed for gas low, open for gas normal
+State gas_pressure_switch = OPEN;   // closed for gas low, open for gas normal
 State earth_switch = CLOSED;  // closed for earthed, open for not earthed
 State circuit_supervision_status_switch = CLOSED;   // closed for normal, open for fault
 State service_position_switch = CLOSED;   // closed for racked in, open for racked out 
@@ -170,16 +177,24 @@ void writeLEDOutputs() {
   LEDregisters[CB_status_LEDr] = !CB_status;
   LEDregisters[gas_pressure_status_LEDg] = !gas_pressure_switch;
   LEDregisters[gas_pressure_status_LEDr] = gas_pressure_switch;
-  LEDregisters[earth_switch_status_LEDg] = !earth_switch;
+  LEDregisters[earth_switch_status_LEDg] = earth_switch;
   LEDregisters[earth_switch_status_LEDr] = earth_switch;
   LEDregisters[generic_status_LED1g] = generic_status_switch1;
-  // LEDregisters[generic_status_LED1g] = !generic_status_switch1;
-  // LEDregisters[generic_status_LED2] = generic_status_switch2;
-  // LEDregisters[service_position_status_LED] = service_position_switch;
-  // LEDregisters[spring_charge_status_LED] = spring_status_switch;
-  // LEDregisters[circuit_supervision_status_LED] = circuit_supervision_status_switch;
-  // LEDregisters[generic_status_LED3] = generic_status_switch3;
-  // LEDregisters[generic_status_LED4] = generic_status_switch4;
+  LEDregisters[generic_status_LED1r] = !generic_status_switch1;
+
+  LEDregisters[generic_status_LED2r] = generic_status_switch2;
+
+  LEDregisters[service_position_status_LEDg] = service_position_switch;
+  LEDregisters[service_position_status_LEDr] = !service_position_switch;
+  LEDregisters[spring_charge_status_LEDg] = spring_status_switch;
+  LEDregisters[spring_charge_status_LEDr] = !spring_status_switch;
+  LEDregisters[circuit_supervision_status_LEDg] = circuit_supervision_status_switch;
+  LEDregisters[circuit_supervision_status_LEDr] = !circuit_supervision_status_switch;
+  LEDregisters[generic_status_LED3g] = generic_status_switch3;
+  LEDregisters[generic_status_LED3r] = !generic_status_switch3;
+
+  LEDregisters[generic_status_LED4] = generic_status_switch4;
+
   Serial.println("led register");
   Serial.print("CB_status: ");
   Serial.println(CB_status);
@@ -320,43 +335,43 @@ void loop() {
   // Buttons for generic statuses
   unsigned char key2 = buttonSet2.getKey();
   switch (key2) {
-    case 1: // service position status: racked in
-      service_position_switch = CLOSED;
+    case 1: // service position status: racked out
+      service_position_switch = OPEN;
       break;
-    case 2:   // spring charge status: charged (switch closed)
-      if (spring_status_switch != CLOSED) {
-        prev_spring_status = spring_status_switch;
-        spring_status_switch = CLOSED;   // Charged
-      }
-      spring_charge_timer_running = 0;  // Stop auto timer
-      break;
-    case 3: // trip circuit supervision status: normal
-      circuit_supervision_status_switch = CLOSED;
-      break;
-    case 4: 
-      generic_status_switch3 = CLOSED;
-      break;
-    case 5:
-      generic_status_switch4 = CLOSED;
-      break;
-    case 6:
-      generic_status_switch4 = OPEN;
-      break;
-    case 7:
-      generic_status_switch3 = OPEN;
-      break;
-    case 8: // trip circuit supervision status: fault
-      circuit_supervision_status_switch = OPEN;
-      break;
-    case 9:  // spring charge discharged (switch open)
+    case 2:  // spring charge discharged (switch open)
       if (spring_status_switch != OPEN) {
           prev_spring_status = spring_status_switch;
           spring_status_switch = OPEN;   // Discharged
       }
       spring_charge_timer_running = 0;  // Stop auto timer
       break;
-    case 10:  // service position status: racked out
-      service_position_switch = OPEN;
+    case 3: // trip circuit supervision status: fault
+      circuit_supervision_status_switch = OPEN;
+      break; 
+    case 4: 
+      generic_status_switch3 = OPEN;
+      break;
+    case 5:
+      generic_status_switch4 = OPEN;
+      break;
+    case 6:
+      generic_status_switch4 = CLOSED;
+      break;
+    case 7:
+      generic_status_switch3 = CLOSED;
+      break;
+    case 8:// trip circuit supervision status: normal
+      circuit_supervision_status_switch = CLOSED;
+      break;
+    case 9:   // spring charge status: charged (switch closed)
+      if (spring_status_switch != CLOSED) {
+        prev_spring_status = spring_status_switch;
+        spring_status_switch = CLOSED;   // Charged
+      }
+      spring_charge_timer_running = 0;  // Stop auto timer
+      break;
+    case 10:  // service position status: racked in
+      service_position_switch = CLOSED;
       break;
   }
 
