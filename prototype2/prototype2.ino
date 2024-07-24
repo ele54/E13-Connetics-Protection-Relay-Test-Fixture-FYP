@@ -48,16 +48,21 @@ boolean registers[numOfRegisterPins];
 #define numOfLEDRegisterPins numOfLEDRegisters * 8
 boolean LEDregisters[numOfLEDRegisterPins];
 // Positions of the output LEDs connected to each bit of the 74HC595 shift registers
-#define CB_status_LED 10
-#define gas_pressure_status_LED 11
-#define earth_switch_status_LED 12
-#define generic_status_LED1 13
-#define generic_status_LED2 14
-#define service_position_status_LED 6
-#define spring_charge_status_LED 4
-#define circuit_supervision_status_LED 3
-#define generic_status_LED3 2
-#define generic_status_LED4 1
+#define CB_status_LEDg 2
+#define CB_status_LEDr 1
+#define gas_pressure_status_LEDg 3
+#define gas_pressure_status_LEDr 4
+#define earth_switch_status_LEDg 5
+#define earth_switch_status_LEDr 7
+#define generic_status_LED1g 6
+
+#define generic_status_LED1r 8
+#define generic_status_LED2 9
+#define service_position_status_LED 11
+#define spring_charge_status_LED 12
+#define circuit_supervision_status_LED 13
+#define generic_status_LED3 14
+#define generic_status_LED4 15
 
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   // Preset CB status buttons
@@ -153,22 +158,53 @@ void setRegisterPin(int index, int value){
 
 // write LED shift registers according to each status
 void writeLEDOutputs() {
-  LEDregisters[CB_status_LED] = CB_status;
-  LEDregisters[gas_pressure_status_LED] = gas_pressure_switch;
-  LEDregisters[earth_switch_status_LED] = !earth_switch;
-  LEDregisters[generic_status_LED1] = generic_status_switch1;
-  LEDregisters[generic_status_LED2] = generic_status_switch2;
-  LEDregisters[service_position_status_LED] = service_position_switch;
-  LEDregisters[spring_charge_status_LED] = spring_status_switch;
-  LEDregisters[circuit_supervision_status_LED] = circuit_supervision_status_switch;
-  LEDregisters[generic_status_LED3] = generic_status_switch3;
-  LEDregisters[generic_status_LED4] = generic_status_switch4;
-  serial.println("led register")
+  // LEDregisters[CB_status_LEDg] = 1;
+  // LEDregisters[CB_status_LEDr] = 0;
+  // LEDregisters[gas_pressure_status_LEDg] = 1;
+  // LEDregisters[gas_pressure_status_LEDr] = 0;
+  // LEDregisters[earth_switch_status_LEDg] = 1;
+  // LEDregisters[earth_switch_status_LEDr] = 0;
+  // LEDregisters[generic_status_LED1r] = 1;
+
+  LEDregisters[CB_status_LEDg] = CB_status;
+  LEDregisters[CB_status_LEDr] = !CB_status;
+  LEDregisters[gas_pressure_status_LEDg] = !gas_pressure_switch;
+  LEDregisters[gas_pressure_status_LEDr] = gas_pressure_switch;
+  LEDregisters[earth_switch_status_LEDg] = !earth_switch;
+  LEDregisters[earth_switch_status_LEDr] = earth_switch;
+  LEDregisters[generic_status_LED1g] = generic_status_switch1;
+  // LEDregisters[generic_status_LED1g] = !generic_status_switch1;
+  // LEDregisters[generic_status_LED2] = generic_status_switch2;
+  // LEDregisters[service_position_status_LED] = service_position_switch;
+  // LEDregisters[spring_charge_status_LED] = spring_status_switch;
+  // LEDregisters[circuit_supervision_status_LED] = circuit_supervision_status_switch;
+  // LEDregisters[generic_status_LED3] = generic_status_switch3;
+  // LEDregisters[generic_status_LED4] = generic_status_switch4;
+  Serial.println("led register");
+  Serial.print("CB_status: ");
+  Serial.println(CB_status);
+  Serial.print("CB_status_LEDg: ");
+  Serial.println(LEDregisters[CB_status_LEDg]);
+  Serial.print("CB_status_LEDr: ");
+  Serial.println(LEDregisters[CB_status_LEDr]);
   for(int i = 0; i < 16; i++)
   {
     Serial.println(LEDregisters[i]);
   }
-  writeRegisters(LED_latch_pin, LED_clock_pin, LED_data_pin);
+
+  digitalWrite(LED_latch_pin, LOW);
+
+  for(int i = numOfLEDRegisterPins - 1; i >=  0; i--){
+    digitalWrite(LED_clock_pin, LOW);
+
+    int val = LEDregisters[i];
+
+    digitalWrite(LED_data_pin, val);
+    digitalWrite(LED_clock_pin, HIGH);
+
+  }
+  digitalWrite(LED_latch_pin, HIGH);
+
 }
 
 void setup() {
@@ -191,6 +227,11 @@ void setup() {
   //reset all register pins
   clearRegisters();
   writeRegisters(out_latch_pin, out_clock_pin, out_data_pin);
+  
+  // LED shift registers
+  pinMode(LED_latch_pin, OUTPUT);
+  pinMode(LED_clock_pin, OUTPUT);
+  pinMode(LED_data_pin, OUTPUT);
 
   pinMode(A0, INPUT);   
   pinMode(A1, INPUT);   
@@ -230,6 +271,7 @@ void loop() {
 
   switch (key1) {
     case 1: // CB status: (manual) close
+    Serial.println("close cb");
       if (CB_status != CLOSED) {
         prev_CB_status = CB_status;
         CB_status = CLOSED;  
