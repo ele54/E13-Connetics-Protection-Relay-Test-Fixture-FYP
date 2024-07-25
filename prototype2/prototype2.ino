@@ -15,7 +15,7 @@ enum State {OPEN, CLOSED};
 bool spring_charge_timer_running = 0; // Timer for spring charged status re-charging
 unsigned long spring_charge_start_time;
 
-#define trip_input 2  // Digital pin used for CB trip
+#define trip_input_pin 2  // Digital pin used for CB trip
 
 // CD4014 shift register pins and variables
 #define in_data_pin 3 // pin 3 Q8
@@ -44,7 +44,7 @@ boolean registers[numOfRegisterPins];
 #define LED_data_pin 9  //pin 14 DS
 #define LED_latch_pin 10 //pin 12 ST_CP
 #define LED_clock_pin 11  //pin 11 SH_CP
-#define numOfLEDRegisters 2
+#define numOfLEDRegisters 3
 #define numOfLEDRegisterPins numOfLEDRegisters * 8
 boolean LEDregisters[numOfLEDRegisterPins];
 // Positions of the output LEDs connected to each bit of the 74HC595 shift registers
@@ -69,7 +69,8 @@ boolean LEDregisters[numOfLEDRegisterPins];
 #define generic_status_LED3g 9
 #define generic_status_LED3r 10
 
-#define generic_status_LED4 21
+#define generic_status_LED4g 21
+#define generic_status_LED4r 22
 
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   // Preset CB status buttons
@@ -165,25 +166,15 @@ void setRegisterPin(int index, int value){
 
 // write LED shift registers according to each status
 void writeLEDOutputs() {
-  // LEDregisters[CB_status_LEDg] = 1;
-  // LEDregisters[CB_status_LEDr] = 0;
-  // LEDregisters[gas_pressure_status_LEDg] = 1;
-  // LEDregisters[gas_pressure_status_LEDr] = 0;
-  // LEDregisters[earth_switch_status_LEDg] = 1;
-  // LEDregisters[earth_switch_status_LEDr] = 0;
-  // LEDregisters[generic_status_LED1r] = 1;
-
   LEDregisters[CB_status_LEDg] = CB_status;
   LEDregisters[CB_status_LEDr] = !CB_status;
   LEDregisters[gas_pressure_status_LEDg] = !gas_pressure_switch;
   LEDregisters[gas_pressure_status_LEDr] = gas_pressure_switch;
   LEDregisters[earth_switch_status_LEDg] = earth_switch;
-  LEDregisters[earth_switch_status_LEDr] = earth_switch;
+  LEDregisters[earth_switch_status_LEDr] = !earth_switch;
   LEDregisters[generic_status_LED1g] = generic_status_switch1;
   LEDregisters[generic_status_LED1r] = !generic_status_switch1;
-
   LEDregisters[generic_status_LED2r] = generic_status_switch2;
-
   LEDregisters[service_position_status_LEDg] = service_position_switch;
   LEDregisters[service_position_status_LEDr] = !service_position_switch;
   LEDregisters[spring_charge_status_LEDg] = spring_status_switch;
@@ -193,19 +184,8 @@ void writeLEDOutputs() {
   LEDregisters[generic_status_LED3g] = generic_status_switch3;
   LEDregisters[generic_status_LED3r] = !generic_status_switch3;
 
-  LEDregisters[generic_status_LED4] = generic_status_switch4;
-
-  Serial.println("led register");
-  Serial.print("CB_status: ");
-  Serial.println(CB_status);
-  Serial.print("CB_status_LEDg: ");
-  Serial.println(LEDregisters[CB_status_LEDg]);
-  Serial.print("CB_status_LEDr: ");
-  Serial.println(LEDregisters[CB_status_LEDr]);
-  for(int i = 0; i < 16; i++)
-  {
-    Serial.println(LEDregisters[i]);
-  }
+  LEDregisters[generic_status_LED4g] = generic_status_switch4;
+  LEDregisters[generic_status_LED4r] = !generic_status_switch4;
 
   digitalWrite(LED_latch_pin, LOW);
 
@@ -225,6 +205,7 @@ void writeLEDOutputs() {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  pinMode(trip_input_pin, INPUT);
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
 
@@ -377,7 +358,7 @@ void loop() {
 
   ref_inputs = shiftIn(in_latch_pin, in_clock_pin, in_data_pin);
 
-  int trip_signal = digitalRead(trip_input);
+  int trip_signal = digitalRead(trip_input_pin);
   int auxiliary_signal = getBit(auxiliary_ref_input);
   if (trip_signal == HIGH) {  
     prev_CB_status = CB_status;
