@@ -56,9 +56,9 @@ boolean LEDregisters[numOfLEDRegisterPins];
 #define earth_switch_status_LEDr 7
 #define generic_status_LED1g 6
 
-#define generic_status_LED1r 22
-#define generic_status_LED2g 23
-#define generic_status_LED2r 24
+#define generic_status_LED1r 8
+#define generic_status_LED2g 17
+#define generic_status_LED2r 16
 
 #define service_position_status_LEDg 0
 #define service_position_status_LEDr 15
@@ -174,7 +174,8 @@ void writeLEDOutputs() {
   LEDregisters[earth_switch_status_LEDr] = !earth_switch;
   LEDregisters[generic_status_LED1g] = generic_status_switch1;
   LEDregisters[generic_status_LED1r] = !generic_status_switch1;
-  LEDregisters[generic_status_LED2r] = generic_status_switch2;
+  LEDregisters[generic_status_LED2g] = generic_status_switch2;
+  LEDregisters[generic_status_LED2r] = !generic_status_switch2;
   LEDregisters[service_position_status_LEDg] = service_position_switch;
   LEDregisters[service_position_status_LEDr] = !service_position_switch;
   LEDregisters[spring_charge_status_LEDg] = spring_status_switch;
