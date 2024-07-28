@@ -62,8 +62,8 @@ State generic_status_switch4 = CLOSED;
 
 // write LED shift registers according to each status
 void writeLEDOutputs() {
-  LEDregisters[CB_status_LEDg] = CB_status;
-  LEDregisters[CB_status_LEDr] = !CB_status;
+  LEDregisters[CB_status_LEDg] = !CB_status;
+  LEDregisters[CB_status_LEDr] = CB_status;
   LEDregisters[gas_pressure_status_LEDg] = !gas_pressure_switch;
   LEDregisters[gas_pressure_status_LEDr] = gas_pressure_switch;
   LEDregisters[earth_switch_status_LEDg] = !earth_switch;
@@ -142,19 +142,11 @@ void loop() {
   // Left set of buttons
   unsigned char key1 = buttonSet1.getKey();
   switch (key1) {
-    case 1: // CB status: (manual) close
-    Serial.println("close cb");
-      prev_CB_status = CB_status;
-      CB_status = CLOSED;  
-      if (prev_CB_status == OPEN) {
-        spring_status_switch = OPEN;
-        spring_charge_start_time = millis();    // start timer
-        spring_charge_timer_running = 1;
-        Serial.println("Restart timer: ");
-        Serial.println(spring_charge_start_time);
-        Serial.print("spring_status_switch after cb close: ");
-        Serial.println(spring_status_switch);
-      }
+    case 1: // CB status: (manual) open
+      if (CB_status != OPEN) {
+        prev_CB_status = CB_status;
+        CB_status = OPEN;  
+      }    
       break;
     case 2: // gas pressure: normal
       gas_pressure_switch = OPEN;
@@ -180,11 +172,19 @@ void loop() {
     case 9: // gas pressure: low
       gas_pressure_switch = CLOSED;
       break;
-    case 10:  // CB status: (manual) open
-      if (CB_status != OPEN) {
-        prev_CB_status = CB_status;
-        CB_status = OPEN;  
-      }    
+    case 10:  // CB status: (manual) close
+    Serial.println("close cb");
+      prev_CB_status = CB_status;
+      CB_status = CLOSED;  
+      if (prev_CB_status == OPEN) {
+        spring_status_switch = OPEN;
+        spring_charge_start_time = millis();    // start timer
+        spring_charge_timer_running = 1;
+        Serial.println("Restart timer: ");
+        Serial.println(spring_charge_start_time);
+        Serial.print("spring_status_switch after cb close: ");
+        Serial.println(spring_status_switch);
+      }
       break;
   }
 
