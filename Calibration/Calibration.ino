@@ -11,13 +11,16 @@
    NOTE: when no press or press one key/button, the values on Serial Monitor may be NOT consistent, they may be slighly different => use a central value
 */
 
-#define ANALOG_PIN A0
-
 void setup() {
   Serial.begin(9600);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
 }
 
 void loop() {
-  Serial.println(analogRead(ANALOG_PIN));
+  Serial.println("A0: ");
+  Serial.println(analogRead(A0));
+  Serial.println("A1: ");
+  Serial.println(analogRead(A1));
   delay(100);
 }
