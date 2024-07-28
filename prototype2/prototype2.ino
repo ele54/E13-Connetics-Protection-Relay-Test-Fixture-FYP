@@ -354,7 +354,6 @@ void loop() {
   if (trip_signal == HIGH) {  
     prev_CB_status = CB_status;
     CB_status = OPEN; 
-    spring_status_switch = OPEN;
   }
 
   int close_signal = digitalRead(close_input_pin);
