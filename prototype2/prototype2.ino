@@ -170,8 +170,8 @@ void writeLEDOutputs() {
   LEDregisters[CB_status_LEDr] = !CB_status;
   LEDregisters[gas_pressure_status_LEDg] = !gas_pressure_switch;
   LEDregisters[gas_pressure_status_LEDr] = gas_pressure_switch;
-  LEDregisters[earth_switch_status_LEDg] = earth_switch;
-  LEDregisters[earth_switch_status_LEDr] = !earth_switch;
+  LEDregisters[earth_switch_status_LEDg] = !earth_switch;
+  LEDregisters[earth_switch_status_LEDr] = earth_switch;
   LEDregisters[generic_status_LED1g] = generic_status_switch1;
   LEDregisters[generic_status_LED1r] = !generic_status_switch1;
   LEDregisters[generic_status_LED2g] = generic_status_switch2;
