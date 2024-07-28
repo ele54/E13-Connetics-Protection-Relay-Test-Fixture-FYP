@@ -16,7 +16,7 @@ bool spring_charge_timer_running = 0; // Timer for spring charged status re-char
 unsigned long spring_charge_start_time;
 
 #define trip_input_pin 2  // Digital pin used for CB trip
-
+#define close_input_pin 12
 // CD4014 shift register pins and variables
 #define in_data_pin 3 // pin 3 Q8
 #define in_latch_pin 4  // pin 9 PE
@@ -78,7 +78,6 @@ ezAnalogKeypad buttonSet2(A1);  // Currently used as generic statuses' buttons
 
 State CB_status = CLOSED;  
 State prev_CB_status = CLOSED;  
-State prev_spring_status = CLOSED;  
 State gas_pressure_switch = OPEN;   // closed for gas low, open for gas normal
 State earth_switch = CLOSED;  // closed for earthed, open for not earthed
 State circuit_supervision_status_switch = CLOSED;   // closed for normal, open for fault
@@ -264,20 +263,19 @@ void setup() {
 void loop() {
   // Process buttons
   unsigned char key1 = buttonSet1.getKey();
-  Serial.println(key1);
-
   switch (key1) {
     case 1: // CB status: (manual) close
     Serial.println("close cb");
-      if (CB_status != CLOSED) {
-        prev_CB_status = CB_status;
-        CB_status = CLOSED;  
-      }
-      if ((prev_CB_status == OPEN) && (spring_status_switch == OPEN)) {
+      prev_CB_status = CB_status;
+      CB_status = CLOSED;  
+      if (prev_CB_status == OPEN) {
+        spring_status_switch = OPEN;
         spring_charge_start_time = millis();    // start timer
         spring_charge_timer_running = 1;
         Serial.println("Restart timer: ");
         Serial.println(spring_charge_start_time);
+        Serial.print("spring_status_switch after cb close: ");
+        Serial.println(spring_status_switch);
       }
       break;
     case 2: // gas pressure: normal
@@ -308,8 +306,6 @@ void loop() {
       if (CB_status != OPEN) {
         prev_CB_status = CB_status;
         CB_status = OPEN;  
-        prev_spring_status = spring_status_switch;
-        spring_status_switch = OPEN;
       }    
       break;
   }
@@ -321,10 +317,7 @@ void loop() {
       service_position_switch = OPEN;
       break;
     case 2:  // spring charge discharged (switch open)
-      if (spring_status_switch != OPEN) {
-          prev_spring_status = spring_status_switch;
-          spring_status_switch = OPEN;   // Discharged
-      }
+      spring_status_switch = OPEN;   // Discharged
       spring_charge_timer_running = 0;  // Stop auto timer
       break;
     case 3: // trip circuit supervision status: fault
@@ -346,10 +339,7 @@ void loop() {
       circuit_supervision_status_switch = CLOSED;
       break;
     case 9:   // spring charge status: charged (switch closed)
-      if (spring_status_switch != CLOSED) {
-        prev_spring_status = spring_status_switch;
-        spring_status_switch = CLOSED;   // Charged
-      }
+      spring_status_switch = CLOSED;   // Charged
       spring_charge_timer_running = 0;  // Stop auto timer
       break;
     case 10:  // service position status: racked in
@@ -364,10 +354,20 @@ void loop() {
   if (trip_signal == HIGH) {  
     prev_CB_status = CB_status;
     CB_status = OPEN; 
-    prev_spring_status = spring_status_switch;
     spring_status_switch = OPEN;
-    setRegisterPin(auxiliary_52A_output, !auxiliary_signal);
-    setRegisterPin(auxiliary_52B_output, auxiliary_signal);
+  }
+
+  int close_signal = digitalRead(close_input_pin);
+  if (close_signal == HIGH) {
+    prev_CB_status = CB_status;
+    CB_status = CLOSED;  
+    if (prev_CB_status == OPEN) {
+      spring_status_switch = OPEN;
+      spring_charge_start_time = millis();    // start timer
+      spring_charge_timer_running = 1;
+      Serial.println("Restart timer: ");
+      Serial.println(spring_charge_start_time);
+    }
   }
 
   switch (CB_status) {
@@ -386,13 +386,5 @@ void loop() {
       }
       break;
   }
-
-  // setStatusOutput()
-  // setStatusOutput(spring_charge_ref_input, spring_status_switch, spring_charge_status_output);
-  // setStatusOutput(supervision_ref_input, circuit_supervision_status_switch, circuit_supervision_status_output);
-  // setStatusOutput(service_position_ref_input, service_position_switch, service_position_status_output);
-
-  // writeRegisters(out_latch_pin, out_clock_pin, out_data_pin);
-
   writeLEDOutputs();
 }
