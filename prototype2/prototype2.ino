@@ -7,7 +7,6 @@ Prototype 2:
 #include <ezAnalogKeypad.h>
 
 // Defines to make code more readable
-enum State {OPEN, CLOSED};
 bool spring_charge_timer_running = 0; // Timer for spring charged status re-charging
 unsigned long spring_charge_start_time;
 
@@ -47,17 +46,17 @@ boolean LEDregisters[numOfLEDRegisterPins];
 ezAnalogKeypad buttonSet1(A0);   
 ezAnalogKeypad buttonSet2(A1);  
 
-State CB_status = CLOSED;  
-State prev_CB_status = CLOSED;  
-State gas_pressure_switch = OPEN;   // closed for gas low, open for gas normal
-State earth_switch = CLOSED;  // closed for earthed, open for not earthed
-State circuit_supervision_status_switch = CLOSED;   // closed for normal, open for fault
-State service_position_switch = CLOSED;   // closed for racked in, open for racked out 
-State spring_status_switch = CLOSED;   // closed for charged, open for discharged
-State generic_status_switch1 = CLOSED;
-State generic_status_switch2 = CLOSED;
-State generic_status_switch3 = CLOSED;
-State generic_status_switch4 = CLOSED;
+boolean CB_status = HIGH;  
+boolean prev_CB_status = HIGH;  
+boolean gas_pressure_switch = LOW;   // HIGH for gas low, LOW for gas normal
+boolean earth_switch = HIGH;  // HIGH for earthed, LOW for not earthed
+boolean circuit_supervision_status_switch = HIGH;   // HIGH for normal, LOW for fault
+boolean service_position_switch = HIGH;   // HIGH for racked in, LOW for racked out 
+boolean spring_status_switch = HIGH;   // HIGH for charged, LOW for discharged
+boolean generic_status_switch1 = HIGH;
+boolean generic_status_switch2 = HIGH;
+boolean generic_status_switch3 = HIGH;
+boolean generic_status_switch4 = HIGH;
 
 // write LED shift registers according to each status
 void writeLEDOutputs() {
@@ -114,23 +113,23 @@ void setup() {
   buttonSet1.registerKey(1, 0); // button for CB manual close
   buttonSet1.registerKey(2, 100); // button for gas pressure normal
   buttonSet1.registerKey(3, 200); // button for earth switch not earthed
-  buttonSet1.registerKey(4, 300); // button for generic status1 closed
-  buttonSet1.registerKey(5, 400); // button for generic status2 closed
-  buttonSet1.registerKey(6, 500); // button for generic status2 open
-  buttonSet1.registerKey(7, 600); // button for generic status1 open
-  buttonSet1.registerKey(8, 700); // button for earth switch closed
+  buttonSet1.registerKey(4, 300); // button for generic status1 HIGH
+  buttonSet1.registerKey(5, 400); // button for generic status2 HIGH
+  buttonSet1.registerKey(6, 500); // button for generic status2 LOW
+  buttonSet1.registerKey(7, 600); // button for generic status1 LOW
+  buttonSet1.registerKey(8, 700); // button for earth switch HIGH
   buttonSet1.registerKey(9, 800); // button for gas pressure low
-  buttonSet1.registerKey(10, 900); // button for CB manual open
+  buttonSet1.registerKey(10, 900); // button for CB manual LOW
 
   // Right hand side buttons 
   buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
   buttonSet2.registerKey(1, 0);  // service position status racked in
   buttonSet2.registerKey(2, 100); // spring charge status charged
   buttonSet2.registerKey(3, 200); // trip circuit supervision status normal
-  buttonSet2.registerKey(4, 300); // generic status3 closed
-  buttonSet2.registerKey(5, 400); // generic status4 closed
-  buttonSet2.registerKey(6, 500); // generic status4 open
-  buttonSet2.registerKey(7, 600); // generic status3 open
+  buttonSet2.registerKey(4, 300); // generic status3 HIGH
+  buttonSet2.registerKey(5, 400); // generic status4 HIGH
+  buttonSet2.registerKey(6, 500); // generic status4 LOW
+  buttonSet2.registerKey(7, 600); // generic status3 LOW
   buttonSet2.registerKey(8, 700); // trip circuit supervision status fault
   buttonSet2.registerKey(9, 800); // spring charge status discharged
   buttonSet2.registerKey(10, 900);  // service position status racked out
@@ -141,41 +140,41 @@ void loop() {
   // Left set of buttons
   unsigned char key1 = buttonSet1.getKey();
   switch (key1) {
-    case 1: // CB status: (manual) open
-      if (CB_status != OPEN) {
+    case 1: // CB status: (manual) LOW
+      if (CB_status != LOW) {
         prev_CB_status = CB_status;
-        CB_status = OPEN;  
+        CB_status = LOW;  
       }    
       break;
     case 2: // gas pressure: normal
-      gas_pressure_switch = OPEN;
+      gas_pressure_switch = LOW;
       break;
     case 3: // earth switch: not earthed
-      earth_switch = OPEN;
+      earth_switch = LOW;
       break;
     case 4:
-      generic_status_switch1 = CLOSED;
+      generic_status_switch1 = HIGH;
       break;
     case 5:
-      generic_status_switch2 = CLOSED;
+      generic_status_switch2 = HIGH;
       break;
     case 6:
-      generic_status_switch2 = OPEN;
+      generic_status_switch2 = LOW;
       break;
     case 7:
-      generic_status_switch1 = OPEN;
+      generic_status_switch1 = LOW;
       break;
     case 8: // earth switch: earthed
-      earth_switch = CLOSED;
+      earth_switch = HIGH;
       break;
     case 9: // gas pressure: low
-      gas_pressure_switch = CLOSED;
+      gas_pressure_switch = HIGH;
       break;
     case 10:  // CB status: (manual) close
       prev_CB_status = CB_status;
-      CB_status = CLOSED;  
-      if (prev_CB_status == OPEN) {
-        spring_status_switch = OPEN;
+      CB_status = HIGH;  
+      if (prev_CB_status == LOW) {
+        spring_status_switch = LOW;
         spring_charge_start_time = millis();    // start timer
         spring_charge_timer_running = 1;
       }
@@ -184,62 +183,63 @@ void loop() {
 
   // Right set of buttons
   unsigned char key2 = buttonSet2.getKey();
+  Serial.println(analogRead(A1));
   switch (key2) {
     case 1: // service position status: racked out
-      service_position_switch = OPEN;
+      service_position_switch = LOW;
       break;
-    case 2:  // spring charge discharged (switch open)
-      spring_status_switch = OPEN;   // Discharged
+    case 2:  // spring charge discharged (switch LOW)
+      spring_status_switch = LOW;   // Discharged
       spring_charge_timer_running = 0;  // Stop auto timer
       break;
     case 3: // trip circuit supervision status: fault
-      circuit_supervision_status_switch = OPEN;
+      circuit_supervision_status_switch = LOW;
       break; 
     case 4: 
-      generic_status_switch3 = OPEN;
+      generic_status_switch3 = LOW;
       break;
     case 5:
-      generic_status_switch4 = OPEN;
+      generic_status_switch4 = LOW;
       break;
     case 6:
-      generic_status_switch4 = CLOSED;
+      generic_status_switch4 = HIGH;
       break;
     case 7:
-      generic_status_switch3 = CLOSED;
+      generic_status_switch3 = HIGH;
       break;
     case 8:// trip circuit supervision status: normal
-      circuit_supervision_status_switch = CLOSED;
+      circuit_supervision_status_switch = HIGH;
       break;
-    case 9:   // spring charge status: charged (switch closed)
-      spring_status_switch = CLOSED;   // Charged
+    case 9:   // spring charge status: charged (switch HIGH)
+      spring_status_switch = HIGH;   // Charged
       spring_charge_timer_running = 0;  // Stop auto timer
       break;
     case 10:  // service position status: racked in
-      service_position_switch = CLOSED;
+      service_position_switch = HIGH;
       break;
   }
 
   int trip_signal = digitalRead(trip_input_pin);
   if (trip_signal == HIGH) {  
     prev_CB_status = CB_status;
-    CB_status = OPEN; 
+    CB_status = LOW; 
   }
 
   int close_signal = digitalRead(close_input_pin);
   if (close_signal == HIGH) {
     prev_CB_status = CB_status;
-    CB_status = CLOSED;  
-    if (prev_CB_status == OPEN) {
-      spring_status_switch = OPEN;
+    CB_status = HIGH;  
+    if (prev_CB_status == LOW) {
+      spring_status_switch = LOW;
       spring_charge_start_time = millis();    // start timer
       spring_charge_timer_running = 1;
     }
   }
 
-  if (CB_status == CLOSED) {
-    if ((spring_status_switch == OPEN) && (spring_charge_timer_running)) {
+  if (CB_status == HIGH) {
+    if ((spring_status_switch == LOW) && (spring_charge_timer_running)) {
         if ((millis() - spring_charge_start_time) >= 4000) {
-          spring_status_switch = CLOSED;  // if 4 seconds have passed since CB closed, spring finishes charging
+          spring_status_switch = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
           spring_charge_timer_running = 0;
         }
     }
