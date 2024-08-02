@@ -95,6 +95,17 @@ void writeLEDOutputs() {
 
 }
 
+// set cb status to high and set spring charge status to discharged
+void closeCB() {
+  prev_CB_status = CB_status;
+  CB_status = HIGH;  
+  if (prev_CB_status == LOW) {
+    spring_status_switch = LOW;
+    spring_charge_start_time = millis();    // start timer
+    spring_charge_timer_running = 1;
+  }
+}
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -171,13 +182,7 @@ void loop() {
       gas_pressure_switch = HIGH;
       break;
     case 10:  // CB status: (manual) close
-      prev_CB_status = CB_status;
-      CB_status = HIGH;  
-      if (prev_CB_status == LOW) {
-        spring_status_switch = LOW;
-        spring_charge_start_time = millis();    // start timer
-        spring_charge_timer_running = 1;
-      }
+      closeCB();
       break;
   }
 
@@ -227,13 +232,7 @@ void loop() {
 
   int close_signal = digitalRead(close_input_pin);
   if (close_signal == HIGH) {
-    prev_CB_status = CB_status;
-    CB_status = HIGH;  
-    if (prev_CB_status == LOW) {
-      spring_status_switch = LOW;
-      spring_charge_start_time = millis();    // start timer
-      spring_charge_timer_running = 1;
-    }
+    closeCB();
   }
 
   if (CB_status == HIGH) {
