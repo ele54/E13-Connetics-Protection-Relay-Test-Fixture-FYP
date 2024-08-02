@@ -3,7 +3,6 @@ Prototype 2:
 
   CB status trips based on signal and manual button inputs.
   Out shift register code modified from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
-  In shift register code modified from https://wiki-content.arduino.cc/en/Tutorial/ShftIn14
 */
 #include <ezAnalogKeypad.h>
 
@@ -45,8 +44,8 @@ boolean LEDregisters[numOfLEDRegisterPins];
 #define generic_status_LED4r 22
 
 // analog pins are A0(14) to A5(19)
-ezAnalogKeypad buttonSet1(A0);   // Preset CB status buttons
-ezAnalogKeypad buttonSet2(A1);  // Currently used as generic statuses' buttons
+ezAnalogKeypad buttonSet1(A0);   
+ezAnalogKeypad buttonSet2(A1);  
 
 State CB_status = CLOSED;  
 State prev_CB_status = CLOSED;  
@@ -83,7 +82,7 @@ void writeLEDOutputs() {
   LEDregisters[generic_status_LED4g] = generic_status_switch4;
   LEDregisters[generic_status_LED4r] = !generic_status_switch4;
   digitalWrite(LED_latch_pin, LOW);
-  // write outputs 
+  // write outputs to shift register data pin
   for(int i = numOfLEDRegisterPins - 1; i >=  0; i--){
     digitalWrite(LED_clock_pin, LOW);
 
@@ -173,17 +172,12 @@ void loop() {
       gas_pressure_switch = CLOSED;
       break;
     case 10:  // CB status: (manual) close
-    Serial.println("close cb");
       prev_CB_status = CB_status;
       CB_status = CLOSED;  
       if (prev_CB_status == OPEN) {
         spring_status_switch = OPEN;
         spring_charge_start_time = millis();    // start timer
         spring_charge_timer_running = 1;
-        Serial.println("Restart timer: ");
-        Serial.println(spring_charge_start_time);
-        Serial.print("spring_status_switch after cb close: ");
-        Serial.println(spring_status_switch);
       }
       break;
   }
@@ -239,8 +233,6 @@ void loop() {
       spring_status_switch = OPEN;
       spring_charge_start_time = millis();    // start timer
       spring_charge_timer_running = 1;
-      Serial.println("Restart timer: ");
-      Serial.println(spring_charge_start_time);
     }
   }
 
