@@ -151,7 +151,7 @@ void loop() {
   // Left set of buttons
   unsigned char key1 = buttonSet1.getKey();
   switch (key1) {
-    case 1: // CB status: (manual) LOW
+    case 1: // CB status: (manual) open
       if (CB_status != LOW) {
         prev_CB_status = CB_status;
         CB_status = LOW;  
@@ -235,13 +235,11 @@ void loop() {
     closeCB();
   }
 
-  if (CB_status == HIGH) {
-    if ((spring_status_switch == LOW) && (spring_charge_timer_running)) {
-        if ((millis() - spring_charge_start_time) >= 4000) {
-          spring_status_switch = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
-          spring_charge_timer_running = 0;
-        }
-    }
+  if ((spring_status_switch == LOW) && (spring_charge_timer_running)) {
+      if ((millis() - spring_charge_start_time) >= 4000) {
+        spring_status_switch = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
+        spring_charge_timer_running = 0;
+      }
   }
   writeLEDOutputs();
 }
