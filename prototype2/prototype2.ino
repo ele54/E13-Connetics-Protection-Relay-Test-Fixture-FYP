@@ -106,6 +106,12 @@ void closeCB() {
   }
 }
 
+// set cb status to low and saves previous cb status
+void openCB() {
+    prev_CB_status = CB_status;
+    CB_status = LOW; 
+}
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -152,10 +158,7 @@ void loop() {
   unsigned char key1 = buttonSet1.getKey();
   switch (key1) {
     case 1: // CB status: (manual) open
-      if (CB_status != LOW) {
-        prev_CB_status = CB_status;
-        CB_status = LOW;  
-      }    
+      openCB();
       break;
     case 2: // gas pressure: normal
       gas_pressure_switch = LOW;
@@ -226,8 +229,7 @@ void loop() {
 
   int trip_signal = digitalRead(trip_input_pin);
   if (trip_signal == HIGH) {  
-    prev_CB_status = CB_status;
-    CB_status = LOW; 
+    openCB();
   }
 
   int close_signal = digitalRead(close_input_pin);
