@@ -20,66 +20,44 @@ unsigned long spring_charge_start_time;
 #define numOfLEDRegisters 3
 #define numOfLEDRegisterPins numOfLEDRegisters * 8
 boolean LEDregisters[numOfLEDRegisterPins];
-// Positions of the output LEDs connected to each bit of the 74HC595 shift registers
-#define CB_status_LEDg 2
-#define CB_status_LEDr 1
-#define gas_pressure_status_LEDg 3
-#define gas_pressure_status_LEDr 4
-#define earth_switch_status_LEDg 5
-#define earth_switch_status_LEDr 7
-#define generic_status_LED1g 6
-#define generic_status_LED1r 8
-#define generic_status_LED2g 17
-#define generic_status_LED2r 16
-#define service_position_status_LEDg 0
-#define service_position_status_LEDr 15
-#define spring_charge_status_LEDg 14
-#define spring_charge_status_LEDr 13
-#define circuit_supervision_status_LEDg 12
-#define circuit_supervision_status_LEDr 11
-#define generic_status_LED3g 9
-#define generic_status_LED3r 10
-#define generic_status_LED4g 21
-#define generic_status_LED4r 22
+
+struct Status {
+  int green_LED;  // shift register pin that the LEDs are connected to  
+  int red_LED;
+  int green_button;   // position of button 
+  int red_button;
+  boolean state;
+};
+
+#define NUM_STATUSES 10
+
+Status statuses_array[NUM_STATUSES];
 
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   
 ezAnalogKeypad buttonSet2(A1);  
 
-boolean CB_status = HIGH;  
+// array index of each status 
+#define CB_status 0  
+#define gas_pressure_status 1 
+#define earth_switch_status 2  
+#define circuit_supervision_status 3  
+#define service_position_status 4  
+#define spring_charge_status 5  
+#define generic_status1 6
+#define generic_status2 7
+#define generic_status3 8
+#define generic_status4 9
+
 boolean prev_CB_status = HIGH;  
-boolean gas_pressure_switch = LOW;   // HIGH for gas low, LOW for gas normal
-boolean earth_switch = HIGH;  // HIGH for earthed, LOW for not earthed
-boolean circuit_supervision_status_switch = HIGH;   // HIGH for normal, LOW for fault
-boolean service_position_switch = HIGH;   // HIGH for racked in, LOW for racked out 
-boolean spring_status_switch = HIGH;   // HIGH for charged, LOW for discharged
-boolean generic_status_switch1 = HIGH;
-boolean generic_status_switch2 = HIGH;
-boolean generic_status_switch3 = HIGH;
-boolean generic_status_switch4 = HIGH;
 
 // write LED shift registers according to each status
 void writeLEDOutputs() {
-  LEDregisters[CB_status_LEDg] = !CB_status;
-  LEDregisters[CB_status_LEDr] = CB_status;
-  LEDregisters[gas_pressure_status_LEDg] = !gas_pressure_switch;
-  LEDregisters[gas_pressure_status_LEDr] = gas_pressure_switch;
-  LEDregisters[earth_switch_status_LEDg] = !earth_switch;
-  LEDregisters[earth_switch_status_LEDr] = earth_switch;
-  LEDregisters[generic_status_LED1g] = generic_status_switch1;
-  LEDregisters[generic_status_LED1r] = !generic_status_switch1;
-  LEDregisters[generic_status_LED2g] = generic_status_switch2;
-  LEDregisters[generic_status_LED2r] = !generic_status_switch2;
-  LEDregisters[service_position_status_LEDg] = service_position_switch;
-  LEDregisters[service_position_status_LEDr] = !service_position_switch;
-  LEDregisters[spring_charge_status_LEDg] = spring_status_switch;
-  LEDregisters[spring_charge_status_LEDr] = !spring_status_switch;
-  LEDregisters[circuit_supervision_status_LEDg] = circuit_supervision_status_switch;
-  LEDregisters[circuit_supervision_status_LEDr] = !circuit_supervision_status_switch;
-  LEDregisters[generic_status_LED3g] = generic_status_switch3;
-  LEDregisters[generic_status_LED3r] = !generic_status_switch3;
-  LEDregisters[generic_status_LED4g] = generic_status_switch4;
-  LEDregisters[generic_status_LED4r] = !generic_status_switch4;
+  for (int i = 0; i < NUM_STATUSES; i++) {
+    LEDregisters[statuses_array[i].green_LED] = statuses_array[i].state;
+    LEDregisters[statuses_array[i].red_LED] = !statuses_array[i].state;
+  }
+
   digitalWrite(LED_latch_pin, LOW);
   // write outputs to shift register data pin
   for(int i = numOfLEDRegisterPins - 1; i >=  0; i--){
@@ -97,10 +75,10 @@ void writeLEDOutputs() {
 
 // set cb status to high and set spring charge status to discharged
 void closeCB() {
-  prev_CB_status = CB_status;
-  CB_status = HIGH;  
+  prev_CB_status = statuses_array[CB_status].state;
+  statuses_array[CB_status].state = HIGH;  
   if (prev_CB_status == LOW) {
-    spring_status_switch = LOW;
+    statuses_array[spring_charge_status].state = LOW;
     spring_charge_start_time = millis();    // start timer
     spring_charge_timer_running = 1;
   }
@@ -108,8 +86,19 @@ void closeCB() {
 
 // set cb status to low and saves previous cb status
 void openCB() {
-    prev_CB_status = CB_status;
-    CB_status = LOW; 
+    prev_CB_status = statuses_array[CB_status].state;
+    statuses_array[CB_status].state = LOW; 
+}
+
+void processButton(unsigned char key) {
+  for (int i = 0; i < NUM_STATUSES*2; i++) {
+    if (key == statuses_array[i].green_LED) {
+      statuses_array[i].state = HIGH;
+    }
+    if (key == statuses_array[i].red_LED) {
+      statuses_array[i].state = LOW;
+    }
+  }
 }
 
 void setup() {
@@ -140,92 +129,34 @@ void setup() {
 
   // Right hand side buttons 
   buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet2.registerKey(1, 0);  // service position status racked in
-  buttonSet2.registerKey(2, 100); // spring charge status charged
-  buttonSet2.registerKey(3, 200); // trip circuit supervision status normal
-  buttonSet2.registerKey(4, 300); // generic status3 HIGH
-  buttonSet2.registerKey(5, 400); // generic status4 HIGH
-  buttonSet2.registerKey(6, 500); // generic status4 LOW
-  buttonSet2.registerKey(7, 600); // generic status3 LOW
-  buttonSet2.registerKey(8, 700); // trip circuit supervision status fault
-  buttonSet2.registerKey(9, 800); // spring charge status discharged
-  buttonSet2.registerKey(10, 900);  // service position status racked out
+  buttonSet2.registerKey(11, 0);  // service position status racked in
+  buttonSet2.registerKey(12, 100); // spring charge status charged
+  buttonSet2.registerKey(13, 200); // trip circuit supervision status normal
+  buttonSet2.registerKey(14, 300); // generic status3 HIGH
+  buttonSet2.registerKey(15, 400); // generic status4 HIGH
+  buttonSet2.registerKey(16, 500); // generic status4 LOW
+  buttonSet2.registerKey(17, 600); // generic status3 LOW
+  buttonSet2.registerKey(18, 700); // trip circuit supervision status fault
+  buttonSet2.registerKey(19, 800); // spring charge status discharged
+  buttonSet2.registerKey(20, 900);  // service position status racked out
 
+  statuses_array[CB_status].green_LED = 2;
+  statuses_array[CB_status].red_LED = 1;
+  statuses_array[CB_status].green_button = 1;
+  statuses_array[CB_status].red_button = 10;
+  statuses_array[CB_status].state = HIGH;
+
+  // add more statuses
 }
 
 void loop() {
   // Left set of buttons
   unsigned char key1 = buttonSet1.getKey();
-  switch (key1) {
-    case 1: // CB status: (manual) open
-      openCB();
-      break;
-    case 2: // gas pressure: normal
-      gas_pressure_switch = LOW;
-      break;
-    case 3: // earth switch: not earthed
-      earth_switch = LOW;
-      break;
-    case 4:
-      generic_status_switch1 = HIGH;
-      break;
-    case 5:
-      generic_status_switch2 = HIGH;
-      break;
-    case 6:
-      generic_status_switch2 = LOW;
-      break;
-    case 7:
-      generic_status_switch1 = LOW;
-      break;
-    case 8: // earth switch: earthed
-      earth_switch = HIGH;
-      break;
-    case 9: // gas pressure: low
-      gas_pressure_switch = HIGH;
-      break;
-    case 10:  // CB status: (manual) close
-      closeCB();
-      break;
-  }
+  processButton(key1);
 
   // Right set of buttons
   unsigned char key2 = buttonSet2.getKey();
-  Serial.println(analogRead(A1));
-  switch (key2) {
-    case 1: // service position status: racked out
-      service_position_switch = LOW;
-      break;
-    case 2:  // spring charge discharged (switch LOW)
-      spring_status_switch = LOW;   // Discharged
-      spring_charge_timer_running = 0;  // Stop auto timer
-      break;
-    case 3: // trip circuit supervision status: fault
-      circuit_supervision_status_switch = LOW;
-      break; 
-    case 4: 
-      generic_status_switch3 = LOW;
-      break;
-    case 5:
-      generic_status_switch4 = LOW;
-      break;
-    case 6:
-      generic_status_switch4 = HIGH;
-      break;
-    case 7:
-      generic_status_switch3 = HIGH;
-      break;
-    case 8:// trip circuit supervision status: normal
-      circuit_supervision_status_switch = HIGH;
-      break;
-    case 9:   // spring charge status: charged (switch HIGH)
-      spring_status_switch = HIGH;   // Charged
-      spring_charge_timer_running = 0;  // Stop auto timer
-      break;
-    case 10:  // service position status: racked in
-      service_position_switch = HIGH;
-      break;
-  }
+  processButton(key2);
 
   int trip_signal = digitalRead(trip_input_pin);
   if (trip_signal == HIGH) {  
@@ -237,9 +168,9 @@ void loop() {
     closeCB();
   }
 
-  if ((spring_status_switch == LOW) && (spring_charge_timer_running)) {
+  if ((statuses_array[spring_charge_status].state == LOW) && (spring_charge_timer_running)) {
       if ((millis() - spring_charge_start_time) >= 4000) {
-        spring_status_switch = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
+        statuses_array[spring_charge_status].state = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
         spring_charge_timer_running = 0;
       }
   }
