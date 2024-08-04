@@ -152,7 +152,9 @@ void setup() {
 void loop() {
   // Left set of buttons
   unsigned char key1 = buttonSet1.getKey();
+  Serial.println(key1);
   processButton(key1);
+  delay(500);
 
   // Right set of buttons
   unsigned char key2 = buttonSet2.getKey();
