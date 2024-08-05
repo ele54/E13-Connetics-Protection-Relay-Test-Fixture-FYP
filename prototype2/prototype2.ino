@@ -29,7 +29,7 @@ struct Status {
   boolean state;
 };
 
-#define NUM_STATUSES 1
+#define NUM_STATUSES 2
 
 Status statuses_array[NUM_STATUSES];
 
@@ -39,11 +39,11 @@ ezAnalogKeypad buttonSet2(A1);
 
 // array index of each status 
 #define CB_status 0  
-#define gas_pressure_status 1 
-#define earth_switch_status 2  
-#define circuit_supervision_status 3  
-#define service_position_status 4  
-#define spring_charge_status 5  
+#define spring_charge_status 1  
+#define gas_pressure_status 2 
+#define earth_switch_status 3  
+#define trip_circuit_supervision_status 4  
+#define service_position_status 5
 #define generic_status1 6
 #define generic_status2 7
 #define generic_status3 8
@@ -76,8 +76,8 @@ void writeLEDOutputs() {
 // set cb status to high and set spring charge status to discharged
 void closeCB() {
   prev_CB_status = statuses_array[CB_status].state;
-  statuses_array[CB_status].state = HIGH;  
-  if (prev_CB_status == LOW) {
+  statuses_array[CB_status].state = LOW;  
+  if (prev_CB_status == HIGH) {
     statuses_array[spring_charge_status].state = LOW;
     spring_charge_start_time = millis();    // start timer
     spring_charge_timer_running = 1;
@@ -87,16 +87,25 @@ void closeCB() {
 // set cb status to low and saves previous cb status
 void openCB() {
     prev_CB_status = statuses_array[CB_status].state;
-    statuses_array[CB_status].state = LOW; 
+    statuses_array[CB_status].state = HIGH; 
 }
 
 void processButton(unsigned char key) {
-  for (int i = 0; i < NUM_STATUSES; i++) {
-    if (key == statuses_array[i].green_button) {
-      statuses_array[i].state = HIGH;
+  if (key == statuses_array[CB_status].green_button) {
+    openCB();
+  } else if (key == statuses_array[CB_status].red_button) {
+    closeCB();
+  } else {
+    if (key == statuses_array[spring_charge_status].green_button || key == statuses_array[spring_charge_status].red_button) {
+      spring_charge_timer_running = 0;  // stop auto timer
     }
-    if (key == statuses_array[i].red_button) {
-      statuses_array[i].state = LOW;
+    for (int i = 0; i < NUM_STATUSES; i++) {
+      if (key == statuses_array[i].green_button) {
+        statuses_array[i].state = HIGH;
+      }
+      if (key == statuses_array[i].red_button) {
+        statuses_array[i].state = LOW;
+      }
     }
   }
 }
@@ -133,7 +142,7 @@ void setup() {
 
   // Left hand side buttons
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet1.registerKey(1, 0); // button for CB manual close
+  buttonSet1.registerKey(1, 0); // button for CB manual HIGH
   buttonSet1.registerKey(2, 100); // button for gas pressure normal
   buttonSet1.registerKey(3, 200); // button for earth switch not earthed
   buttonSet1.registerKey(4, 300); // button for generic status1 HIGH
@@ -161,7 +170,13 @@ void setup() {
   statuses_array[CB_status].red_LED = 1;
   statuses_array[CB_status].green_button = 1;
   statuses_array[CB_status].red_button = 10;
-  statuses_array[CB_status].state = HIGH;
+  statuses_array[CB_status].state = LOW;    // LOW for Closed, HIGH for Open
+
+  statuses_array[spring_charge_status].green_LED = 3;
+  statuses_array[spring_charge_status].red_LED = 4;
+  statuses_array[spring_charge_status].green_button = 2;
+  statuses_array[spring_charge_status].red_button = 9;
+  statuses_array[spring_charge_status].state = HIGH;
 
   // add more statuses
 }
@@ -169,7 +184,6 @@ void setup() {
 void loop() {
   // Left set of buttons
   unsigned char key1 = buttonSet1.getKey();
-  Serial.println(key1);
   processButton(key1);
 
   // Right set of buttons
