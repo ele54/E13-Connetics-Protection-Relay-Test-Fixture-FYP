@@ -144,29 +144,29 @@ void setup() {
 
   // Left hand side buttons
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet1.registerKey(1, 0); // button for CB manual HIGH
-  buttonSet1.registerKey(2, 100); // button for gas pressure normal
-  buttonSet1.registerKey(3, 200); // button for earth switch not earthed
-  buttonSet1.registerKey(4, 300); // button for generic status1 HIGH
-  buttonSet1.registerKey(5, 400); // button for generic status2 HIGH
-  buttonSet1.registerKey(6, 500); // button for generic status2 LOW
-  buttonSet1.registerKey(7, 600); // button for generic status1 LOW
-  buttonSet1.registerKey(8, 700); // button for earth switch HIGH
-  buttonSet1.registerKey(9, 800); // button for gas pressure low
-  buttonSet1.registerKey(10, 900); // button for CB manual LOW
+  buttonSet1.registerKey(1, 0); 
+  buttonSet1.registerKey(2, 100); 
+  buttonSet1.registerKey(3, 200); 
+  buttonSet1.registerKey(4, 300); 
+  buttonSet1.registerKey(5, 400); 
+  buttonSet1.registerKey(6, 500);
+  buttonSet1.registerKey(7, 600); 
+  buttonSet1.registerKey(8, 700);
+  buttonSet1.registerKey(9, 800); 
+  buttonSet1.registerKey(10, 900);
 
   // Right hand side buttons 
   buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet2.registerKey(20, 0);  // service position status racked in
-  buttonSet2.registerKey(19, 100); // spring charge status charged
-  buttonSet2.registerKey(18, 200); // trip circuit supervision status normal
-  buttonSet2.registerKey(17, 300); // generic status3 HIGH
-  buttonSet2.registerKey(16, 400); // generic status4 HIGH
-  buttonSet2.registerKey(15, 500); // generic status4 LOW
-  buttonSet2.registerKey(14, 600); // generic status3 LOW
-  buttonSet2.registerKey(13, 700); // trip circuit supervision status fault
-  buttonSet2.registerKey(12, 800); // spring charge status discharged
-  buttonSet2.registerKey(11, 900);  // service position status racked out
+  buttonSet2.registerKey(20, 0);  
+  buttonSet2.registerKey(19, 100); 
+  buttonSet2.registerKey(18, 200); 
+  buttonSet2.registerKey(17, 300); 
+  buttonSet2.registerKey(16, 400); 
+  buttonSet2.registerKey(15, 500); 
+  buttonSet2.registerKey(14, 600); 
+  buttonSet2.registerKey(13, 700); 
+  buttonSet2.registerKey(12, 800); 
+  buttonSet2.registerKey(11, 900); 
 
 }
 
