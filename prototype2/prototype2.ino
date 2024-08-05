@@ -62,15 +62,9 @@ ezAnalogKeypad buttonSet2(A1);
 
 boolean prev_CB_status = HIGH;  
 
-// write LED shift registers according to each status
-void writeLEDOutputs() {
-  for (int i = 0; i < NUM_STATUSES; i++) {
-    LEDregisters[statuses_array[i].green_LED] = statuses_array[i].state;
-    LEDregisters[statuses_array[i].red_LED] = !statuses_array[i].state;
-  }
-
+// write outputs to shift register data pin
+void outputLEDs() {
   digitalWrite(LED_latch_pin, LOW);
-  // write outputs to shift register data pin
   for(int i = numOfLEDRegisterPins - 1; i >=  0; i--){
     digitalWrite(LED_clock_pin, LOW);
 
@@ -81,7 +75,15 @@ void writeLEDOutputs() {
 
   }
   digitalWrite(LED_latch_pin, HIGH);
+}
 
+// write LED shift registers according to each status
+void writeLEDRegister() {
+  for (int i = 0; i < NUM_STATUSES; i++) {
+    LEDregisters[statuses_array[i].green_LED] = statuses_array[i].state;
+    LEDregisters[statuses_array[i].red_LED] = !statuses_array[i].state;
+  }
+  outputLEDs();
 }
 
 // set cb status to high and set spring charge status to discharged
@@ -134,22 +136,11 @@ void setup() {
   pinMode(LED_clock_pin, OUTPUT);
   pinMode(LED_data_pin, OUTPUT);
 
+  // clear LED pins
   for (int i = 0; i< numOfLEDRegisterPins; i++) {
     LEDregisters[i] = LOW;
   }
-
-  digitalWrite(LED_latch_pin, LOW);
-  // write outputs to shift register data pin
-  for(int i = numOfLEDRegisterPins - 1; i >=  0; i--){
-    digitalWrite(LED_clock_pin, LOW);
-
-    int val = LEDregisters[i];
-
-    digitalWrite(LED_data_pin, val);
-    digitalWrite(LED_clock_pin, HIGH);
-
-  }
-  digitalWrite(LED_latch_pin, HIGH);
+  outputLEDs();
 
   // Left hand side buttons
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
@@ -177,19 +168,6 @@ void setup() {
   buttonSet2.registerKey(12, 800); // spring charge status discharged
   buttonSet2.registerKey(11, 900);  // service position status racked out
 
-  statuses_array[CB_status].green_LED = 2;
-  statuses_array[CB_status].red_LED = 1;
-  statuses_array[CB_status].green_button = 1;
-  statuses_array[CB_status].red_button = 10;
-  statuses_array[CB_status].state = LOW;    // LOW for Closed, HIGH for Open
-
-  statuses_array[spring_charge_status].green_LED = 3;
-  statuses_array[spring_charge_status].red_LED = 4;
-  statuses_array[spring_charge_status].green_button = 2;
-  statuses_array[spring_charge_status].red_button = 9;
-  statuses_array[spring_charge_status].state = HIGH;
-
-  // add more statuses
 }
 
 void loop() {
@@ -217,5 +195,5 @@ void loop() {
         spring_charge_timer_running = 0;
       }
   }
-  writeLEDOutputs();
+  writeLEDRegister();
 }
