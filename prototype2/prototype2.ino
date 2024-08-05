@@ -177,6 +177,7 @@ void loop() {
 
   // Right set of buttons
   unsigned char key2 = buttonSet2.getKey();
+  Serial.println(analogRead(A1));
   processButton(key2);
 
   int trip_signal = digitalRead(trip_input_pin);
