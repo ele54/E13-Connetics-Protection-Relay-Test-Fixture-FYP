@@ -29,7 +29,7 @@ struct Status {
   boolean state;
 };
 
-#define NUM_STATUSES 10
+#define NUM_STATUSES 1
 
 Status statuses_array[NUM_STATUSES];
 
@@ -91,11 +91,11 @@ void openCB() {
 }
 
 void processButton(unsigned char key) {
-  for (int i = 0; i < NUM_STATUSES*2; i++) {
-    if (key == statuses_array[i].green_LED) {
+  for (int i = 0; i < NUM_STATUSES; i++) {
+    if (key == statuses_array[i].green_button) {
       statuses_array[i].state = HIGH;
     }
-    if (key == statuses_array[i].red_LED) {
+    if (key == statuses_array[i].red_button) {
       statuses_array[i].state = LOW;
     }
   }
@@ -113,6 +113,23 @@ void setup() {
   pinMode(LED_latch_pin, OUTPUT);
   pinMode(LED_clock_pin, OUTPUT);
   pinMode(LED_data_pin, OUTPUT);
+
+  for (int i = 0; i< numOfLEDRegisterPins; i++) {
+    LEDregisters[i] = LOW;
+  }
+
+  digitalWrite(LED_latch_pin, LOW);
+  // write outputs to shift register data pin
+  for(int i = numOfLEDRegisterPins - 1; i >=  0; i--){
+    digitalWrite(LED_clock_pin, LOW);
+
+    int val = LEDregisters[i];
+
+    digitalWrite(LED_data_pin, val);
+    digitalWrite(LED_clock_pin, HIGH);
+
+  }
+  digitalWrite(LED_latch_pin, HIGH);
 
   // Left hand side buttons
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
@@ -154,7 +171,6 @@ void loop() {
   unsigned char key1 = buttonSet1.getKey();
   Serial.println(key1);
   processButton(key1);
-  delay(500);
 
   // Right set of buttons
   unsigned char key2 = buttonSet2.getKey();
