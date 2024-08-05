@@ -29,9 +29,20 @@ struct Status {
   boolean state;
 };
 
-#define NUM_STATUSES 2
+#define NUM_STATUSES 10
 
-Status statuses_array[NUM_STATUSES];
+Status statuses_array[NUM_STATUSES] = {
+  {2, 1, 1, 10, LOW}, // breaker position
+  {3, 4, 2, 9, HIGH}, // spring charge status
+  {5, 7, 3, 8, HIGH}, 
+  {6, 8, 4, 7, LOW},
+  {17, 16, 5, 6, HIGH},
+  {0, 15, 11, 20, HIGH},
+  {14, 13, 12, 19, HIGH},
+  {12, 11, 13, 18, HIGH},
+  {9, 10, 14, 17, HIGH},
+  {21, 22, 15, 16, HIGH},
+};
 
 // analog pins are A0(14) to A5(19)
 ezAnalogKeypad buttonSet1(A0);   
@@ -155,16 +166,16 @@ void setup() {
 
   // Right hand side buttons 
   buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet2.registerKey(11, 0);  // service position status racked in
-  buttonSet2.registerKey(12, 100); // spring charge status charged
-  buttonSet2.registerKey(13, 200); // trip circuit supervision status normal
-  buttonSet2.registerKey(14, 300); // generic status3 HIGH
-  buttonSet2.registerKey(15, 400); // generic status4 HIGH
-  buttonSet2.registerKey(16, 500); // generic status4 LOW
-  buttonSet2.registerKey(17, 600); // generic status3 LOW
-  buttonSet2.registerKey(18, 700); // trip circuit supervision status fault
-  buttonSet2.registerKey(19, 800); // spring charge status discharged
-  buttonSet2.registerKey(20, 900);  // service position status racked out
+  buttonSet2.registerKey(20, 0);  // service position status racked in
+  buttonSet2.registerKey(19, 100); // spring charge status charged
+  buttonSet2.registerKey(18, 200); // trip circuit supervision status normal
+  buttonSet2.registerKey(17, 300); // generic status3 HIGH
+  buttonSet2.registerKey(16, 400); // generic status4 HIGH
+  buttonSet2.registerKey(15, 500); // generic status4 LOW
+  buttonSet2.registerKey(14, 600); // generic status3 LOW
+  buttonSet2.registerKey(13, 700); // trip circuit supervision status fault
+  buttonSet2.registerKey(12, 800); // spring charge status discharged
+  buttonSet2.registerKey(11, 900);  // service position status racked out
 
   statuses_array[CB_status].green_LED = 2;
   statuses_array[CB_status].red_LED = 1;
