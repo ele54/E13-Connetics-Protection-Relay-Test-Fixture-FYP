@@ -11,15 +11,16 @@ bool spring_charge_timer_running = 0; // Timer for spring charged status re-char
 unsigned long spring_charge_start_time;
 
 #define trip_input_pin 2  // Digital pin used for CB trip
-#define close_input_pin 12
+#define close_input_pin 3
 
 // 74HC595 shift register pins and variables for LEDs
-#define LED_data_pin 9  //pin 14 DS
-#define LED_latch_pin 10 //pin 12 ST_CP
-#define LED_clock_pin 11  //pin 11 SH_CP
-#define numOfLEDRegisters 3
-#define numOfLEDRegisterPins numOfLEDRegisters * 8
-boolean LEDregisters[numOfLEDRegisterPins];
+#define status_data_pin 4  //pin 14 DS
+#define status_latch_pin 5 //pin 12 ST_CP
+#define status_clock_pin 6  //pin 11 SH_CP
+
+#define num_status_registers 3
+#define num_status_register_pins num_status_registers * 8
+boolean LEDregisters[num_status_register_pins];
 
 struct Status {
   int green_LED;  // shift register pin that the LEDs are connected to  
@@ -64,17 +65,17 @@ boolean prev_CB_status = HIGH;
 
 // write outputs to shift register data pin
 void outputLEDs() {
-  digitalWrite(LED_latch_pin, LOW);
-  for(int i = numOfLEDRegisterPins - 1; i >=  0; i--){
-    digitalWrite(LED_clock_pin, LOW);
+  digitalWrite(status_latch_pin, LOW);
+  for(int i = num_status_register_pins - 1; i >=  0; i--){
+    digitalWrite(status_clock_pin, LOW);
 
     int val = LEDregisters[i];
 
-    digitalWrite(LED_data_pin, val);
-    digitalWrite(LED_clock_pin, HIGH);
+    digitalWrite(status_data_pin, val);
+    digitalWrite(status_clock_pin, HIGH);
 
   }
-  digitalWrite(LED_latch_pin, HIGH);
+  digitalWrite(status_latch_pin, HIGH);
 }
 
 // write LED shift registers according to each status
@@ -132,12 +133,12 @@ void setup() {
   pinMode(A1, INPUT);
 
   // LED shift registers
-  pinMode(LED_latch_pin, OUTPUT);
-  pinMode(LED_clock_pin, OUTPUT);
-  pinMode(LED_data_pin, OUTPUT);
+  pinMode(status_latch_pin, OUTPUT);
+  pinMode(status_clock_pin, OUTPUT);
+  pinMode(status_data_pin, OUTPUT);
 
   // clear LED pins
-  for (int i = 0; i< numOfLEDRegisterPins; i++) {
+  for (int i = 0; i< num_status_register_pins; i++) {
     LEDregisters[i] = LOW;
   }
   outputLEDs();
