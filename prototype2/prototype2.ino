@@ -7,16 +7,16 @@ Prototype 2:
 #include <ezAnalogKeypad.h>
 
 // Defines to make code more readable
-bool spring_charge_timer_running = 0; // Timer for spring charged status re-charging
-unsigned long spring_charge_start_time;
+bool SPRING_CHARGE_TIMER_RUNNING = 0; // Timer for spring charged status re-charging
+unsigned long SPRING_CHARGE_START_TIME;
 
-#define trip_input_pin 2  // Digital pin used for CB trip
-#define close_input_pin 3
+#define TRIP_INPUT_PIN 2  // Digital pin used for CB trip
+#define CLOSE_INPUT_PIN 3
 
 // 74HC595 shift register pins and variables for LEDs
-#define status_data_pin 4  //pin 14 DS
-#define status_latch_pin 5 //pin 12 ST_CP
-#define status_clock_pin 6  //pin 11 SH_CP
+#define STATUS_DATA_PIN 4  //pin 14 DS
+#define STATUS_LATCH_PIN 5 //pin 12 ST_CP
+#define STATUS_CLOCK_PIN 6  //pin 11 SH_CP
 
 #define num_status_registers 3
 #define num_status_register_pins num_status_registers * 8
@@ -65,17 +65,17 @@ boolean prev_CB_status = HIGH;
 
 // write outputs to shift register data pin
 void outputLEDs() {
-  digitalWrite(status_latch_pin, LOW);
+  digitalWrite(STATUS_LATCH_PIN, LOW);
   for(int i = num_status_register_pins - 1; i >=  0; i--){
-    digitalWrite(status_clock_pin, LOW);
+    digitalWrite(STATUS_CLOCK_PIN, LOW);
 
     int val = LEDregisters[i];
 
-    digitalWrite(status_data_pin, val);
-    digitalWrite(status_clock_pin, HIGH);
+    digitalWrite(STATUS_DATA_PIN, val);
+    digitalWrite(STATUS_CLOCK_PIN, HIGH);
 
   }
-  digitalWrite(status_latch_pin, HIGH);
+  digitalWrite(STATUS_LATCH_PIN, HIGH);
 }
 
 // write LED shift registers according to each status
@@ -93,8 +93,8 @@ void closeCB() {
   statuses_array[CB_status].state = LOW;  
   if (prev_CB_status == HIGH) {
     statuses_array[spring_charge_status].state = LOW;
-    spring_charge_start_time = millis();    // start timer
-    spring_charge_timer_running = 1;
+    SPRING_CHARGE_START_TIME = millis();    // start timer
+    SPRING_CHARGE_TIMER_RUNNING = 1;
   }
 }
 
@@ -111,7 +111,7 @@ void processButton(unsigned char key) {
     closeCB();
   } else {
     if (key == statuses_array[spring_charge_status].green_button || key == statuses_array[spring_charge_status].red_button) {
-      spring_charge_timer_running = 0;  // stop auto timer
+      SPRING_CHARGE_TIMER_RUNNING = 0;  // stop auto timer
     }
     for (int i = 0; i < NUM_STATUSES; i++) {
       if (key == statuses_array[i].green_button) {
@@ -127,15 +127,15 @@ void processButton(unsigned char key) {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  pinMode(trip_input_pin, INPUT);
-  pinMode(close_input_pin, INPUT);
+  pinMode(TRIP_INPUT_PIN, INPUT);
+  pinMode(CLOSE_INPUT_PIN, INPUT);
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
 
   // LED shift registers
-  pinMode(status_latch_pin, OUTPUT);
-  pinMode(status_clock_pin, OUTPUT);
-  pinMode(status_data_pin, OUTPUT);
+  pinMode(STATUS_LATCH_PIN, OUTPUT);
+  pinMode(STATUS_CLOCK_PIN, OUTPUT);
+  pinMode(STATUS_DATA_PIN, OUTPUT);
 
   // clear LED pins
   for (int i = 0; i< num_status_register_pins; i++) {
@@ -181,20 +181,20 @@ void loop() {
   Serial.println(analogRead(A1));
   processButton(key2);
 
-  int trip_signal = digitalRead(trip_input_pin);
+  int trip_signal = digitalRead(TRIP_INPUT_PIN);
   if (trip_signal == HIGH) {  
     openCB();
   }
 
-  int close_signal = digitalRead(close_input_pin);
+  int close_signal = digitalRead(CLOSE_INPUT_PIN);
   if (close_signal == HIGH) {
     closeCB();
   }
 
-  if ((statuses_array[spring_charge_status].state == LOW) && (spring_charge_timer_running)) {
-      if ((millis() - spring_charge_start_time) >= 4000) {
+  if ((statuses_array[spring_charge_status].state == LOW) && (SPRING_CHARGE_TIMER_RUNNING)) {
+      if ((millis() - SPRING_CHARGE_START_TIME) >= 4000) {
         statuses_array[spring_charge_status].state = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
-        spring_charge_timer_running = 0;
+        SPRING_CHARGE_TIMER_RUNNING = 0;
       }
   }
   writeLEDRegister();
