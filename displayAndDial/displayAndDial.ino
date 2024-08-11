@@ -21,7 +21,8 @@ void setup() {
 
 void loop() {
     pot_value = analogRead(POT_PIN);
-    // pot_value = map(value, 0, 1023, 0, 255);//map value
+    pot_value = map(value, 0, 1023, 0, 200);//map value
     display.set(pot_value);
+    display.setDot(1, true);
     display.show();
 }
