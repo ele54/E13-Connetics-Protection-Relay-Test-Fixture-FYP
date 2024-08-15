@@ -13,19 +13,19 @@ unsigned long SPRING_CHARGE_START_TIME;
 #define TRIP_INPUT_PIN 2  // Digital pin used for CB trip
 #define CLOSE_INPUT_PIN 3
 
-// 74HC595 shift register pins and variables for LEDs
-#define STATUS_DATA_PIN 4  //pin 14 DS
-#define STATUS_LATCH_PIN 5 //pin 12 ST_CP
-#define STATUS_CLOCK_PIN 6  //pin 11 SH_CP
+// 74HC595 shift register pins and variables for status LEDs
+#define STATUS_DATA_PIN 4  //pin 14 DS on shift register
+#define STATUS_LATCH_PIN 5 //pin 12 ST_CP on shift register
+#define STATUS_CLOCK_PIN 6  //pin 11 SH_CP on shift register
 
 #define num_status_registers 3
 #define num_status_register_pins num_status_registers * 8
 boolean LEDregisters[num_status_register_pins];
 
 struct Status {
-  int green_LED;  // shift register pin that the LEDs are connected to  
+  int green_LED;  // shift register pins that the LEDs are connected to  
   int red_LED;
-  int green_button;   // position of button 
+  int green_button;   // position of buttons 
   int red_button;
   boolean state;
 };
@@ -33,8 +33,8 @@ struct Status {
 #define NUM_STATUSES 10
 
 Status statuses_array[NUM_STATUSES] = {
-  {2, 1, 1, 10, LOW}, // breaker position
-  {3, 4, 2, 9, HIGH}, // spring charge status
+  {2, 1, 1, 10, LOW}, // pin mapping for each status group of LEDs and buttons
+  {3, 4, 2, 9, HIGH}, 
   {5, 7, 3, 8, HIGH}, 
   {6, 8, 4, 7, LOW},
   {17, 16, 5, 6, HIGH},
@@ -50,6 +50,7 @@ ezAnalogKeypad buttonSet1(A0);
 ezAnalogKeypad buttonSet2(A1);  
 
 // array index of each status 
+// CHANGE THIS TO MOVE THINGS AROUND ON THE USER INTERFACE (0 being the top status on the user interface)
 #define CB_status 0  
 #define spring_charge_status 1  
 #define gas_pressure_status 2 
@@ -63,7 +64,7 @@ ezAnalogKeypad buttonSet2(A1);
 
 boolean prev_CB_status = HIGH;  
 
-// write outputs to shift register data pin
+// Update status LEDs by writing to the status LEDs shift register data pin
 void outputLEDs() {
   digitalWrite(STATUS_LATCH_PIN, LOW);
   for(int i = num_status_register_pins - 1; i >=  0; i--){
@@ -78,7 +79,7 @@ void outputLEDs() {
   digitalWrite(STATUS_LATCH_PIN, HIGH);
 }
 
-// write LED shift registers according to each status
+// Write status LED shift registers according to each status
 void writeLEDRegister() {
   for (int i = 0; i < NUM_STATUSES; i++) {
     LEDregisters[statuses_array[i].green_LED] = statuses_array[i].state;
@@ -87,7 +88,7 @@ void writeLEDRegister() {
   outputLEDs();
 }
 
-// set cb status to high and set spring charge status to discharged
+// Set cb status to high and set spring charge status to discharged
 void closeCB() {
   prev_CB_status = statuses_array[CB_status].state;
   statuses_array[CB_status].state = LOW;  
@@ -98,18 +99,19 @@ void closeCB() {
   }
 }
 
-// set cb status to low and saves previous cb status
+// Set cb status to low and saves previous cb status
 void openCB() {
     prev_CB_status = statuses_array[CB_status].state;
     statuses_array[CB_status].state = HIGH; 
 }
 
+// Change status LEDs depending on button presses, including spring charge behaviour on CB close
 void processButton(unsigned char key) {
   if (key == statuses_array[CB_status].green_button) {
     openCB();
   } else if (key == statuses_array[CB_status].red_button) {
     closeCB();
-  } else {
+  } else {    // ADD ELSE IF STATEMENTS HERE TO ASSIGN SPECIAL BEHAVOUR TO BUTTONS
     if (key == statuses_array[spring_charge_status].green_button || key == statuses_array[spring_charge_status].red_button) {
       SPRING_CHARGE_TIMER_RUNNING = 0;  // stop auto timer
     }
@@ -125,14 +127,13 @@ void processButton(unsigned char key) {
 }
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
+  // Serial.begin(9600);  // for debugging only
   pinMode(TRIP_INPUT_PIN, INPUT);
   pinMode(CLOSE_INPUT_PIN, INPUT);
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
 
-  // LED shift registers
+  // Status LED shift registers
   pinMode(STATUS_LATCH_PIN, OUTPUT);
   pinMode(STATUS_CLOCK_PIN, OUTPUT);
   pinMode(STATUS_DATA_PIN, OUTPUT);
@@ -145,30 +146,29 @@ void setup() {
 
   // Left hand side buttons
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet1.registerKey(1, 0); // button for CB manual HIGH
-  buttonSet1.registerKey(2, 100); // button for gas pressure normal
-  buttonSet1.registerKey(3, 200); // button for earth switch not earthed
-  buttonSet1.registerKey(4, 300); // button for generic status1 HIGH
-  buttonSet1.registerKey(5, 400); // button for generic status2 HIGH
-  buttonSet1.registerKey(6, 500); // button for generic status2 LOW
-  buttonSet1.registerKey(7, 600); // button for generic status1 LOW
-  buttonSet1.registerKey(8, 700); // button for earth switch HIGH
-  buttonSet1.registerKey(9, 800); // button for gas pressure low
-  buttonSet1.registerKey(10, 900); // button for CB manual LOW
+  buttonSet1.registerKey(1, 0); 
+  buttonSet1.registerKey(2, 100); 
+  buttonSet1.registerKey(3, 200); 
+  buttonSet1.registerKey(4, 300); 
+  buttonSet1.registerKey(5, 400); 
+  buttonSet1.registerKey(6, 500);
+  buttonSet1.registerKey(7, 600); 
+  buttonSet1.registerKey(8, 700);
+  buttonSet1.registerKey(9, 800); 
+  buttonSet1.registerKey(10, 900);
 
   // Right hand side buttons 
   buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet2.registerKey(20, 0);  // service position status racked in
-  buttonSet2.registerKey(19, 100); // spring charge status charged
-  buttonSet2.registerKey(18, 200); // trip circuit supervision status normal
-  buttonSet2.registerKey(17, 300); // generic status3 HIGH
-  buttonSet2.registerKey(16, 400); // generic status4 HIGH
-  buttonSet2.registerKey(15, 500); // generic status4 LOW
-  buttonSet2.registerKey(14, 600); // generic status3 LOW
-  buttonSet2.registerKey(13, 700); // trip circuit supervision status fault
-  buttonSet2.registerKey(12, 800); // spring charge status discharged
-  buttonSet2.registerKey(11, 900);  // service position status racked out
-
+  buttonSet2.registerKey(20, 0);  
+  buttonSet2.registerKey(19, 100); 
+  buttonSet2.registerKey(18, 200); 
+  buttonSet2.registerKey(17, 300); 
+  buttonSet2.registerKey(16, 400); 
+  buttonSet2.registerKey(15, 500); 
+  buttonSet2.registerKey(14, 600); 
+  buttonSet2.registerKey(13, 700); 
+  buttonSet2.registerKey(12, 800); 
+  buttonSet2.registerKey(11, 900); 
 }
 
 void loop() {
@@ -178,7 +178,6 @@ void loop() {
 
   // Right set of buttons
   unsigned char key2 = buttonSet2.getKey();
-  Serial.println(analogRead(A1));
   processButton(key2);
 
   int trip_signal = digitalRead(TRIP_INPUT_PIN);
