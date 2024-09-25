@@ -33,8 +33,8 @@ struct Status {
 #define NUM_STATUSES 11
 
 Status statuses_array[NUM_STATUSES] = {
-  {2, 1, 1, 10, LOW}, // breaker position
-  {3, 4, 2, 9, HIGH}, // spring charge status
+  {2, 1, 1, 10, LOW}, // pin mapping for each status group of LEDs and buttons
+  {3, 4, 2, 9, HIGH}, 
   {5, 7, 3, 8, HIGH}, 
   {6, 8, 4, 7, LOW},
   {17, 16, 5, 6, HIGH},
@@ -51,6 +51,7 @@ ezAnalogKeypad buttonSet2(A2);
 ezAnalogKeypad buttonSet3(A5);  
 
 // array index of each status 
+// CHANGE THIS TO MOVE THINGS AROUND ON THE USER INTERFACE (0 being the top status on the user interface)
 #define CB_status1 0  // CB position 
 #define CB_status2 1  // spring charge 
 #define CB_status3 2  // blank status
@@ -65,7 +66,7 @@ ezAnalogKeypad buttonSet3(A5);
 
 boolean prev_CB_status = HIGH;  
 
-// write outputs to shift register data pin
+// Update status LEDs by writing to the status LEDs shift register data pin
 void outputLEDs() {
   digitalWrite(STATUS_LATCH_PIN, LOW);
   for(int i = num_status_register_pins - 1; i >=  0; i--){
@@ -80,7 +81,7 @@ void outputLEDs() {
   digitalWrite(STATUS_LATCH_PIN, HIGH);
 }
 
-// write LED shift registers according to each status
+// Write status LED shift registers according to each status
 void writeLEDRegister() {
   for (int i = 0; i < NUM_STATUSES; i++) {
     LEDregisters[statuses_array[i].green_LED] = statuses_array[i].state;
@@ -89,7 +90,7 @@ void writeLEDRegister() {
   outputLEDs();
 }
 
-// set cb status to high and set spring charge status to discharged
+// Set cb status to high and set spring charge status to discharged
 void closeCB() {
   prev_CB_status = statuses_array[CB_status1].state;
   statuses_array[CB_status1].state = LOW;  
@@ -100,19 +101,20 @@ void closeCB() {
   }
 }
 
-// set cb status to low and saves previous cb status
+// Set cb status to low and saves previous cb status
 void openCB() {
     prev_CB_status = statuses_array[CB_status1].state;
     statuses_array[CB_status1].state = HIGH; 
 }
 
+// Change status LEDs depending on button presses, including spring charge behaviour on CB close
 void processButton(unsigned char key) {
   if (key == statuses_array[CB_status1].green_button) {
     openCB();
   } else if (key == statuses_array[CB_status1].red_button) {
     closeCB();
-  } else {
-    if (key == statuses_array[CB_status2].green_button || key == statuses_array[CB_status2].red_button) {
+  } else {    // ADD ELSE IF STATEMENTS HERE TO ASSIGN SPECIAL BEHAVOUR TO BUTTONS
+    if (key == statuses_array[spring_charge_status].green_button || key == statuses_array[spring_charge_status].red_button) {
       SPRING_CHARGE_TIMER_RUNNING = 0;  // stop auto timer
     }
     for (int i = 0; i < NUM_STATUSES; i++) {
@@ -127,14 +129,14 @@ void processButton(unsigned char key) {
 }
 
 void setup() {
-  Serial.begin(9600);
+  // Serial.begin(9600);  // for debugging only
   pinMode(TRIP_INPUT_PIN, INPUT);
   pinMode(CLOSE_INPUT_PIN, INPUT);
   pinMode(A1, INPUT);   // Button Set 1
   pinMode(A2, INPUT);   // Button Set 2
   pinMode(A5, INPUT);   // Button Set 3
 
-  // LED shift registers
+  // Status LED shift registers
   pinMode(STATUS_LATCH_PIN, OUTPUT);
   pinMode(STATUS_CLOCK_PIN, OUTPUT);
   pinMode(STATUS_DATA_PIN, OUTPUT);
