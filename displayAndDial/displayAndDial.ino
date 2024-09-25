@@ -18,7 +18,7 @@ ShiftDisplay display(SEG_LATCH_PIN, SEG_CLOCK_PIN, SEG_DATA_PIN, DISPLAY_TYPE, D
 void setup() {
   Serial.begin(9600);
   pinMode(POT_PIN, INPUT);
-}
+} 
 
 void loop() {
   pot_value = analogRead(POT_PIN);

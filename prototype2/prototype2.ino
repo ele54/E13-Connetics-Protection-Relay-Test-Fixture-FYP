@@ -10,27 +10,27 @@ Prototype 2:
 bool SPRING_CHARGE_TIMER_RUNNING = 0; // Timer for spring charged status re-charging
 unsigned long SPRING_CHARGE_START_TIME;
 
-#define TRIP_INPUT_PIN 2  // Digital pin used for CB trip
-#define CLOSE_INPUT_PIN 3
+#define TRIP_INPUT_PIN 9  // Digital pin used for CB trip
+#define CLOSE_INPUT_PIN 10
 
 // 74HC595 shift register pins and variables for LEDs
-#define STATUS_DATA_PIN 4  //pin 14 DS
-#define STATUS_LATCH_PIN 5 //pin 12 ST_CP
-#define STATUS_CLOCK_PIN 6  //pin 11 SH_CP
+#define STATUS_DATA_PIN 2  //pin 14 DS
+#define STATUS_LATCH_PIN 3 //pin 12 ST_CP
+#define STATUS_CLOCK_PIN 4  //pin 11 SH_CP
 
 #define num_status_registers 3
 #define num_status_register_pins num_status_registers * 8
 boolean LEDregisters[num_status_register_pins];
 
 struct Status {
-  int green_LED;  // shift register pin that the LEDs are connected to  
-  int red_LED;
-  int green_button;   // position of button 
-  int red_button;
-  boolean state;
+  int green_LED;  // shift register pin that the LED are connected to  
+  int red_LED;    // shift register pin that the LED are connected to  
+  int green_button;   // position of button (as mapped in setup() function)
+  int red_button;     // position of button (as mapped in setup() function)
+  boolean state;      // output logic state
 };
 
-#define NUM_STATUSES 10
+#define NUM_STATUSES 11
 
 Status statuses_array[NUM_STATUSES] = {
   {2, 1, 1, 10, LOW}, // breaker position
@@ -46,20 +46,22 @@ Status statuses_array[NUM_STATUSES] = {
 };
 
 // analog pins are A0(14) to A5(19)
-ezAnalogKeypad buttonSet1(A0);   
-ezAnalogKeypad buttonSet2(A1);  
+ezAnalogKeypad buttonSet1(A1);   
+ezAnalogKeypad buttonSet2(A2);  
+ezAnalogKeypad buttonSet3(A5);  
 
 // array index of each status 
-#define CB_status 0  
-#define spring_charge_status 1  
-#define gas_pressure_status 2 
-#define earth_switch_status 3  
-#define trip_circuit_supervision_status 4  
-#define service_position_status 5
-#define generic_status1 6
-#define generic_status2 7
-#define generic_status3 8
-#define generic_status4 9
+#define CB_status1 0  // CB position 
+#define CB_status2 1  // spring charge 
+#define CB_status3 2  // blank status
+#define CB_status4 3  // blank status
+#define CB_status5 4  // blank status
+#define CB_status6 5  // blank status
+#define CB_status7 6  // blank status
+#define CB_status8 7  // blank status
+#define CB_status9 8  // blank status
+#define CB_status10 9 // blank status
+#define CB_status11 10  // blank status
 
 boolean prev_CB_status = HIGH;  
 
@@ -89,10 +91,10 @@ void writeLEDRegister() {
 
 // set cb status to high and set spring charge status to discharged
 void closeCB() {
-  prev_CB_status = statuses_array[CB_status].state;
-  statuses_array[CB_status].state = LOW;  
+  prev_CB_status = statuses_array[CB_status1].state;
+  statuses_array[CB_status1].state = LOW;  
   if (prev_CB_status == HIGH) {
-    statuses_array[spring_charge_status].state = LOW;
+    statuses_array[CB_status2].state = LOW;
     SPRING_CHARGE_START_TIME = millis();    // start timer
     SPRING_CHARGE_TIMER_RUNNING = 1;
   }
@@ -100,17 +102,17 @@ void closeCB() {
 
 // set cb status to low and saves previous cb status
 void openCB() {
-    prev_CB_status = statuses_array[CB_status].state;
-    statuses_array[CB_status].state = HIGH; 
+    prev_CB_status = statuses_array[CB_status1].state;
+    statuses_array[CB_status1].state = HIGH; 
 }
 
 void processButton(unsigned char key) {
-  if (key == statuses_array[CB_status].green_button) {
+  if (key == statuses_array[CB_status1].green_button) {
     openCB();
-  } else if (key == statuses_array[CB_status].red_button) {
+  } else if (key == statuses_array[CB_status1].red_button) {
     closeCB();
   } else {
-    if (key == statuses_array[spring_charge_status].green_button || key == statuses_array[spring_charge_status].red_button) {
+    if (key == statuses_array[CB_status2].green_button || key == statuses_array[CB_status2].red_button) {
       SPRING_CHARGE_TIMER_RUNNING = 0;  // stop auto timer
     }
     for (int i = 0; i < NUM_STATUSES; i++) {
@@ -125,12 +127,12 @@ void processButton(unsigned char key) {
 }
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
   pinMode(TRIP_INPUT_PIN, INPUT);
   pinMode(CLOSE_INPUT_PIN, INPUT);
-  pinMode(A0, INPUT);
-  pinMode(A1, INPUT);
+  pinMode(A1, INPUT);   // Button Set 1
+  pinMode(A2, INPUT);   // Button Set 2
+  pinMode(A5, INPUT);   // Button Set 3
 
   // LED shift registers
   pinMode(STATUS_LATCH_PIN, OUTPUT);
@@ -143,31 +145,37 @@ void setup() {
   }
   outputLEDs();
 
-  // Left hand side buttons
+  // Below registerKey parameters are (SW value in schematic, adc reading)
+  // Button Set 1 values
   buttonSet1.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet1.registerKey(1, 0); // button for CB manual HIGH
-  buttonSet1.registerKey(2, 100); // button for gas pressure normal
-  buttonSet1.registerKey(3, 200); // button for earth switch not earthed
-  buttonSet1.registerKey(4, 300); // button for generic status1 HIGH
-  buttonSet1.registerKey(5, 400); // button for generic status2 HIGH
-  buttonSet1.registerKey(6, 500); // button for generic status2 LOW
-  buttonSet1.registerKey(7, 600); // button for generic status1 LOW
-  buttonSet1.registerKey(8, 700); // button for earth switch HIGH
-  buttonSet1.registerKey(9, 800); // button for gas pressure low
-  buttonSet1.registerKey(10, 900); // button for CB manual LOW
+  buttonSet1.registerKey(1, 0);   // Status 4 RedButton (SW1 in schematic)
+  buttonSet1.registerKey(2, 129); // Status 4 GreenButton 
+  buttonSet1.registerKey(3, 253); // Status 3 RedButton 
+  buttonSet1.registerKey(4, 378); // Status 3 GreenButton 
+  buttonSet1.registerKey(5, 502); // Status 2 RedButton 
+  buttonSet1.registerKey(6, 634); // Status 2 GreenButton 
+  buttonSet1.registerKey(7, 758); // Status 1 RedButton 
+  buttonSet1.registerKey(8, 890); // Status 1 GreenButton 
 
-  // Right hand side buttons 
+  // Button Set 2 values 
   buttonSet2.setNoPressValue(1023);  // analog value when no button is pressed
-  buttonSet2.registerKey(20, 0);  // service position status racked in
-  buttonSet2.registerKey(19, 100); // spring charge status charged
-  buttonSet2.registerKey(18, 200); // trip circuit supervision status normal
-  buttonSet2.registerKey(17, 300); // generic status3 HIGH
-  buttonSet2.registerKey(16, 400); // generic status4 HIGH
-  buttonSet2.registerKey(15, 500); // generic status4 LOW
-  buttonSet2.registerKey(14, 600); // generic status3 LOW
-  buttonSet2.registerKey(13, 700); // trip circuit supervision status fault
-  buttonSet2.registerKey(12, 800); // spring charge status discharged
-  buttonSet2.registerKey(11, 900);  // service position status racked out
+  buttonSet2.registerKey(9, 0);    // Status 8 RedButton 
+  buttonSet2.registerKey(10, 155); // Status 8 GreenButton 
+  buttonSet2.registerKey(11, 311); // Status 7 RedButton 
+  buttonSet2.registerKey(12, 459); // Status 7 GreenButton 
+  buttonSet2.registerKey(13, 591); // Status 6 RedButton 
+  buttonSet2.registerKey(14, 740); // Status 6 GreenButton 
+  buttonSet2.registerKey(15, 885); // Status 5 RedButton 
+
+  // Button Set 3 values 
+  buttonSet3.setNoPressValue(1023);  // analog value when no button is pressed
+  buttonSet3.registerKey(16, 0);    // Status 11 RedButton 
+  buttonSet3.registerKey(17, 155);  // Status 11 GreenButton 
+  buttonSet3.registerKey(18, 311);  // Status 10 RedButton 
+  buttonSet3.registerKey(19, 459);  // Status 10 GreenButton 
+  buttonSet3.registerKey(20, 591);  // Status 9 RedButton 
+  buttonSet3.registerKey(21, 740);  // Status 9 GreenButton 
+  buttonSet3.registerKey(22, 885);  // Status 5 RedButton 
 
 }
 
@@ -178,7 +186,6 @@ void loop() {
 
   // Right set of buttons
   unsigned char key2 = buttonSet2.getKey();
-  Serial.println(analogRead(A1));
   processButton(key2);
 
   int trip_signal = digitalRead(TRIP_INPUT_PIN);
@@ -191,9 +198,9 @@ void loop() {
     closeCB();
   }
 
-  if ((statuses_array[spring_charge_status].state == LOW) && (SPRING_CHARGE_TIMER_RUNNING)) {
+  if ((statuses_array[CB_status2].state == LOW) && (SPRING_CHARGE_TIMER_RUNNING)) {
       if ((millis() - SPRING_CHARGE_START_TIME) >= 4000) {
-        statuses_array[spring_charge_status].state = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
+        statuses_array[CB_status2].state = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
         SPRING_CHARGE_TIMER_RUNNING = 0;
       }
   }
