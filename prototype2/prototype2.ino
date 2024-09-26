@@ -6,9 +6,10 @@ Prototype 2:
 */
 #include <ezAnalogKeypad.h>
 
-// Defines to make code more readable
-bool SPRING_CHARGE_TIMER_RUNNING = 0; // Timer for spring charged status re-charging
-unsigned long SPRING_CHARGE_START_TIME;
+ezAnalogKeypad buttonSet1(A1);   
+ezAnalogKeypad buttonSet2(A2);  
+ezAnalogKeypad buttonSet3(A5);  
+
 
 #define TRIP_INPUT_PIN 9  // Digital pin used for CB trip
 #define CLOSE_INPUT_PIN 10
@@ -22,38 +23,10 @@ unsigned long SPRING_CHARGE_START_TIME;
 #define num_status_register_pins num_status_registers * 8
 boolean LEDregisters[num_status_register_pins];
 
-struct Status {
-  int green_LED;  // shift register pin that the LED are connected to  
-  int red_LED;    // shift register pin that the LED are connected to  
-  int green_button;   // position of button (as mapped in setup() function)
-  int red_button;     // position of button (as mapped in setup() function)
-  boolean state;      // output logic state
-};
-
-#define NUM_STATUSES 11
-
-Status statuses_array[NUM_STATUSES] = {
-  {2, 1, 1, 10, LOW}, // pin mapping for each status group of LEDs and buttons
-  {3, 4, 2, 9, HIGH}, 
-  {5, 7, 3, 8, HIGH}, 
-  {6, 8, 4, 7, LOW},
-  {17, 16, 5, 6, HIGH},
-  {0, 15, 11, 20, HIGH},
-  {14, 13, 12, 19, HIGH},
-  {12, 11, 13, 18, HIGH},
-  {9, 10, 14, 17, HIGH},
-  {21, 22, 15, 16, HIGH},
-};
-
-// analog pins are A0(14) to A5(19)
-ezAnalogKeypad buttonSet1(A1);   
-ezAnalogKeypad buttonSet2(A2);  
-ezAnalogKeypad buttonSet3(A5);  
-
 // array index of each status 
-// CHANGE THIS TO MOVE THINGS AROUND ON THE USER INTERFACE (0 being the top status on the user interface)
+// CHANGE THIS TO MOVE THINGS AROUND ON THE USER INTERFACE (0 being the top left status on the user interface)
 #define CB_status1 0  // CB position 
-#define CB_status2 1  // spring charge 
+#define CB_status2 1  // spring charged 
 #define CB_status3 2  // blank status
 #define CB_status4 3  // blank status
 #define CB_status5 4  // blank status
@@ -63,8 +36,35 @@ ezAnalogKeypad buttonSet3(A5);
 #define CB_status9 8  // blank status
 #define CB_status10 9 // blank status
 #define CB_status11 10  // blank status
+#define NUM_STATUSES 11
+
+struct Status {
+  int green_LED;  // shift register pin that the LED are connected to  
+  int red_LED;    // shift register pin that the LED are connected to  
+  int green_button;   // position of button (as mapped in setup() function)
+  int red_button;     // position of button (as mapped in setup() function)
+  boolean state;      // output logic state
+};
+
+Status statuses_array[NUM_STATUSES] = {
+  // pin mapping for each status group of LEDs and buttons (in order of struct arguments)
+  {7, 6, 1, 10, LOW},     // CB_status1 (CB position)
+  {5, 4, 2, 9, HIGH},     // CB_status2 (spring charged)
+  {3, 2, 3, 8, HIGH},     // CB_status3
+  {1, 15, 4, 7, LOW},      // CB_status4
+  {16, 17, 5, 6, HIGH},   // CB_status5
+  {22, 23, 11, 20, HIGH},  // CB_status6
+  {12, 13, 12, 19, HIGH}, // CB_status7
+  {14, 0, 13, 18, HIGH}, // CB_status8
+  {18, 19, 14, 17, HIGH},  // CB_status9
+  {20, 21, 15, 16, HIGH}, // CB_status10
+  {10, 11, 15, 16, HIGH}, // CB_status11
+};
 
 boolean prev_CB_status = HIGH;  
+
+bool SPRING_CHARGE_TIMER_RUNNING = 0; // Timer for spring charged status re-charging
+unsigned long SPRING_CHARGE_START_TIME;
 
 // Update status LEDs by writing to the status LEDs shift register data pin
 void outputLEDs() {
@@ -90,7 +90,7 @@ void writeLEDRegister() {
   outputLEDs();
 }
 
-// Set cb status to high and set spring charge status to discharged
+// Set cb status to high and set spring charged status to discharged
 void closeCB() {
   prev_CB_status = statuses_array[CB_status1].state;
   statuses_array[CB_status1].state = LOW;  
@@ -114,7 +114,7 @@ void processButton(unsigned char key) {
   } else if (key == statuses_array[CB_status1].red_button) {
     closeCB();
   } else {    // ADD ELSE IF STATEMENTS HERE TO ASSIGN SPECIAL BEHAVOUR TO BUTTONS
-    if (key == statuses_array[spring_charge_status].green_button || key == statuses_array[spring_charge_status].red_button) {
+    if (key == statuses_array[CB_status2].green_button || key == statuses_array[CB_status2].red_button) {
       SPRING_CHARGE_TIMER_RUNNING = 0;  // stop auto timer
     }
     for (int i = 0; i < NUM_STATUSES; i++) {
