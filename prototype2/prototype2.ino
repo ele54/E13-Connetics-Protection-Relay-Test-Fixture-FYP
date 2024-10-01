@@ -26,7 +26,7 @@ boolean LEDregisters[num_status_register_pins];
 // array index of each status 
 // CHANGE THIS TO MOVE THINGS AROUND ON THE USER INTERFACE (0 being the top left status on the user interface)
 #define CB_status1 0  // CB position 
-#define CB_status2 1  // spring charged 
+#define CB_status2 1  // spring charged status
 #define CB_status3 2  // blank status
 #define CB_status4 3  // blank status
 #define CB_status5 4  // blank status
@@ -196,7 +196,7 @@ void loop() {
   }
 
   int close_signal = digitalRead(CLOSE_INPUT_PIN);
-  if (close_signal == HIGH) {
+  if (close_signal == HIGH && CB_status2 == HIGH) {
     closeCB();
   }
 
