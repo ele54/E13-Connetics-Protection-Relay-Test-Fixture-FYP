@@ -1,15 +1,18 @@
 /*
-Prototype 2:
+Final Prototype:
 
-  CB status trips based on signal and manual button inputs.
+  CB status opens and closes based on relay trip/close and manual button inputs.
   Out shift register code modified from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
 */
 #include <ezAnalogKeypad.h>
 
+bool SPRING_CHARGE_TIMER_RUNNING = 0; // Timer for spring charged status re-charging
+unsigned long SPRING_CHARGE_START_TIME;
+unsigned long SPRING_CHARGE_DURATION = 4000; // Delay duration to emulate spring charging time in milliseconds
+
 ezAnalogKeypad buttonSet1(A1);   
 ezAnalogKeypad buttonSet2(A2);  
 ezAnalogKeypad buttonSet3(A5);  
-
 
 #define TRIP_INPUT_PIN 9  // Digital pin used for CB trip
 #define CLOSE_INPUT_PIN 10
@@ -25,46 +28,43 @@ boolean LEDregisters[num_status_register_pins];
 
 // array index of each status 
 // CHANGE THIS TO MOVE THINGS AROUND ON THE USER INTERFACE (0 being the top left status on the user interface)
-#define CB_status1 0  // CB position 
-#define CB_status2 1  // spring charged status
-#define CB_status3 2  // blank status
-#define CB_status4 3  // blank status
-#define CB_status5 4  // blank status
-#define CB_status6 5  // blank status
-#define CB_status7 6  // blank status
-#define CB_status8 7  // blank status
-#define CB_status9 8  // blank status
-#define CB_status10 9 // blank status
-#define CB_status11 10  // blank status
+#define CB_status0 0  // CB position 
+#define CB_status1 1  // spring charged status
+#define CB_status2 2  // blank status
+#define CB_status3 3  // blank status
+#define CB_status4 4  // blank status
+#define CB_status5 5  // blank status
+#define CB_status6 6  // blank status
+#define CB_status7 7  // blank status
+#define CB_status8 8  // blank status
+#define CB_status9 9  // blank status
+#define CB_status10 10  // blank status
 #define NUM_STATUSES 11
 
 struct Status {
-  int green_LED;  // shift register pin that the LED are connected to  
-  int red_LED;    // shift register pin that the LED are connected to  
+  int green_LED;      // shift register pin that the LED are connected to  
+  int red_LED;        // shift register pin that the LED are connected to  
   int green_button;   // position of button (as mapped in setup() function)
   int red_button;     // position of button (as mapped in setup() function)
   boolean state;      // output logic state
 };
 
 Status statuses_array[NUM_STATUSES] = {
-  // pin mapping for each status group of LEDs and buttons (in order of struct arguments)
-  {7, 6, 1, 10, LOW},     // CB_status1 (CB position)
-  {5, 4, 2, 9, HIGH},     // CB_status2 (spring charged)
-  {3, 2, 3, 8, HIGH},     // CB_status3
-  {1, 15, 4, 7, LOW},      // CB_status4
-  {16, 17, 5, 6, HIGH},   // CB_status5
-  {22, 23, 11, 20, HIGH},  // CB_status6
-  {12, 13, 12, 19, HIGH}, // CB_status7
-  {14, 0, 13, 18, HIGH}, // CB_status8
-  {18, 19, 14, 17, HIGH},  // CB_status9
-  {20, 21, 15, 16, HIGH}, // CB_status10
-  {10, 11, 15, 16, HIGH}, // CB_status11
+  // pin mapping for each status' associated group of LEDs and buttons 
+  {7, 6, 1, 10, LOW},     // CB_status0 (CB position)
+  {5, 4, 2, 9, HIGH},     // CB_status1 (spring charged)
+  {3, 2, 3, 8, HIGH},     // CB_status2
+  {1, 15, 4, 7, LOW},     // CB_status3
+  {16, 17, 5, 6, HIGH},   // CB_status4
+  {22, 23, 11, 20, HIGH}, // CB_status5
+  {12, 13, 12, 19, HIGH}, // CB_status6
+  {14, 0, 13, 18, HIGH},  // CB_status7
+  {18, 19, 14, 17, HIGH}, // CB_status8
+  {20, 21, 15, 16, HIGH}, // CB_status9
+  {10, 11, 15, 16, HIGH}, // CB_status10
 };
 
 boolean prev_CB_status = HIGH;  
-
-bool SPRING_CHARGE_TIMER_RUNNING = 0; // Timer for spring charged status re-charging
-unsigned long SPRING_CHARGE_START_TIME;
 
 // Update status LEDs by writing to the status LEDs shift register data pin
 void outputLEDs() {
@@ -92,10 +92,10 @@ void writeLEDRegister() {
 
 // Set cb status to high and set spring charged status to discharged
 void closeCB() {
-  prev_CB_status = statuses_array[CB_status1].state;
-  statuses_array[CB_status1].state = LOW;  
+  prev_CB_status = statuses_array[CB_status0].state;
+  statuses_array[CB_status0].state = LOW;  
   if (prev_CB_status == HIGH) {
-    statuses_array[CB_status2].state = LOW;
+    statuses_array[CB_status1].state = LOW;
     SPRING_CHARGE_START_TIME = millis();    // start timer
     SPRING_CHARGE_TIMER_RUNNING = 1;
   }
@@ -103,18 +103,18 @@ void closeCB() {
 
 // Set cb status to low and saves previous cb status
 void openCB() {
-    prev_CB_status = statuses_array[CB_status1].state;
-    statuses_array[CB_status1].state = HIGH; 
+    prev_CB_status = statuses_array[CB_status0].state;
+    statuses_array[CB_status0].state = HIGH; 
 }
 
 // Change status LEDs depending on button presses, including spring charge behaviour on CB close
 void processButton(unsigned char key) {
-  if (key == statuses_array[CB_status1].green_button) {
+  if (key == statuses_array[CB_status0].green_button) {
     openCB();
-  } else if (key == statuses_array[CB_status1].red_button) {
+  } else if (key == statuses_array[CB_status0].red_button) {
     closeCB();
   } else {    // ADD ELSE IF STATEMENTS HERE TO ASSIGN SPECIAL BEHAVOUR TO BUTTONS
-    if (key == statuses_array[CB_status2].green_button || key == statuses_array[CB_status2].red_button) {
+    if (key == statuses_array[CB_status1].green_button || key == statuses_array[CB_status1].red_button) {
       SPRING_CHARGE_TIMER_RUNNING = 0;  // stop auto timer
     }
     for (int i = 0; i < NUM_STATUSES; i++) {
@@ -196,13 +196,14 @@ void loop() {
   }
 
   int close_signal = digitalRead(CLOSE_INPUT_PIN);
-  if (close_signal == HIGH && CB_status2 == HIGH) {
+  // reclose CB from relay signal if spring is charged
+  if (close_signal == HIGH && CB_status1 == HIGH) {
     closeCB();
   }
 
-  if ((statuses_array[CB_status2].state == LOW) && (SPRING_CHARGE_TIMER_RUNNING)) {
-      if ((millis() - SPRING_CHARGE_START_TIME) >= 4000) {
-        statuses_array[CB_status2].state = HIGH;  // if 4 seconds have passed since CB HIGH, spring finishes charging
+  if ((statuses_array[CB_status1].state == LOW) && (SPRING_CHARGE_TIMER_RUNNING)) {
+      if ((millis() - SPRING_CHARGE_START_TIME) >= SPRING_CHARGE_DURATION) {
+        statuses_array[CB_status1].state = HIGH;  // if delay has passed, spring finishes charging
         SPRING_CHARGE_TIMER_RUNNING = 0;
       }
   }
