@@ -14,12 +14,12 @@ const int DISPLAY_TYPE = COMMON_CATHODE;
 
 bool spring_charge_timer_running = 0; // Timer for spring charged status re-charging
 unsigned long spring_charge_start_time;
-#define SPRING_CHARGE_DURATION = 4000; // Delay duration to emulate spring charging time in milliseconds
+#define SPRING_CHARGE_DURATION 4000 // Delay duration to emulate spring charging time in milliseconds
 
 #define POT_PIN A2
+#define SEG_DATA_PIN 6
 #define SEG_LATCH_PIN 7
 #define SEG_CLOCK_PIN 8
-#define SEG_DATA_PIN 9
 #define DISPLAY_SIZE 3
 
 ezAnalogKeypad buttonSet1(A1);   
@@ -31,9 +31,9 @@ ShiftDisplay display(SEG_LATCH_PIN, SEG_CLOCK_PIN, SEG_DATA_PIN, DISPLAY_TYPE, D
 #define CLOSE_INPUT_PIN 10
 
 // 74HC595 shift register pins and variables for LEDs
-#define STATUS_DATA_PIN 2  //pin 14 DS
+#define STATUS_CLOCK_PIN 2  //pin 11 SH_CP
 #define STATUS_LATCH_PIN 3 //pin 12 ST_CP
-#define STATUS_CLOCK_PIN 4  //pin 11 SH_CP
+#define STATUS_DATA_PIN 4  //pin 14 DS
 
 #define num_status_registers 3
 #define num_status_register_pins num_status_registers * 8
