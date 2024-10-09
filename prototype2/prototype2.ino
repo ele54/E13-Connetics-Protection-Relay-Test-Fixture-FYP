@@ -3,16 +3,29 @@ Final Prototype:
 
   CB status opens and closes based on relay trip/close and manual button inputs.
   Out shift register code modified from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
+  Reads a dial and outputs the value to a 3 digit seven segment display.
+
 */
 #include <ezAnalogKeypad.h>
+#include <ShiftDisplay.h>
 
-bool SPRING_CHARGE_TIMER_RUNNING = 0; // Timer for spring charged status re-charging
-unsigned long SPRING_CHARGE_START_TIME;
-unsigned long SPRING_CHARGE_DURATION = 4000; // Delay duration to emulate spring charging time in milliseconds
+float pot_value;
+const int DISPLAY_TYPE = COMMON_CATHODE;
+
+bool spring_charge_timer_running = 0; // Timer for spring charged status re-charging
+unsigned long spring_charge_start_time;
+#define SPRING_CHARGE_DURATION = 4000; // Delay duration to emulate spring charging time in milliseconds
+
+#define POT_PIN A2
+#define SEG_LATCH_PIN 7
+#define SEG_CLOCK_PIN 8
+#define SEG_DATA_PIN 9
+#define DISPLAY_SIZE 3
 
 ezAnalogKeypad buttonSet1(A1);   
 ezAnalogKeypad buttonSet2(A2);  
 ezAnalogKeypad buttonSet3(A5);  
+ShiftDisplay display(SEG_LATCH_PIN, SEG_CLOCK_PIN, SEG_DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE);
 
 #define TRIP_INPUT_PIN 9  // Digital pin used for CB trip
 #define CLOSE_INPUT_PIN 10
@@ -96,8 +109,8 @@ void closeCB() {
   statuses_array[CB_status0].state = LOW;  
   if (prev_CB_status == HIGH) {
     statuses_array[CB_status1].state = LOW;
-    SPRING_CHARGE_START_TIME = millis();    // start timer
-    SPRING_CHARGE_TIMER_RUNNING = 1;
+    spring_charge_start_time = millis();    // start timer
+    spring_charge_timer_running = 1;
   }
 }
 
@@ -115,7 +128,7 @@ void processButton(unsigned char key) {
     closeCB();
   } else {    // ADD ELSE IF STATEMENTS HERE TO ASSIGN SPECIAL BEHAVOUR TO BUTTONS
     if (key == statuses_array[CB_status1].green_button || key == statuses_array[CB_status1].red_button) {
-      SPRING_CHARGE_TIMER_RUNNING = 0;  // stop auto timer
+      spring_charge_timer_running = 0;  // stop auto timer
     }
     for (int i = 0; i < NUM_STATUSES; i++) {
       if (key == statuses_array[i].green_button) {
@@ -129,12 +142,13 @@ void processButton(unsigned char key) {
 }
 
 void setup() {
-  // Serial.begin(9600);  // for debugging only
+  // Serial.begin(9600);  // for debugging 
   pinMode(TRIP_INPUT_PIN, INPUT);
   pinMode(CLOSE_INPUT_PIN, INPUT);
   pinMode(A1, INPUT);   // Button Set 1
   pinMode(A2, INPUT);   // Button Set 2
   pinMode(A5, INPUT);   // Button Set 3
+  pinMode(POT_PIN, INPUT);
 
   // Status LED shift registers
   pinMode(STATUS_LATCH_PIN, OUTPUT);
@@ -182,6 +196,12 @@ void setup() {
 }
 
 void loop() {
+  // Analogue current source potentiometer and display
+  pot_value = analogRead(POT_PIN);
+  pot_value = pot_value/1023 * 2;   //map adc value to 0-2A
+  display.set(pot_value, 2, 0);
+  display.show();
+
   // Left set of buttons
   unsigned char key1 = buttonSet1.getKey();
   processButton(key1);
@@ -201,10 +221,10 @@ void loop() {
     closeCB();
   }
 
-  if ((statuses_array[CB_status1].state == LOW) && (SPRING_CHARGE_TIMER_RUNNING)) {
-      if ((millis() - SPRING_CHARGE_START_TIME) >= SPRING_CHARGE_DURATION) {
+  if ((statuses_array[CB_status1].state == LOW) && (spring_charge_timer_running)) {
+      if ((millis() - spring_charge_start_time) >= SPRING_CHARGE_DURATION) {
         statuses_array[CB_status1].state = HIGH;  // if delay has passed, spring finishes charging
-        SPRING_CHARGE_TIMER_RUNNING = 0;
+        spring_charge_timer_running = 0;
       }
   }
   writeLEDRegister();
