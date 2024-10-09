@@ -3,41 +3,39 @@ Final Prototype:
 
   CB status opens and closes based on relay trip/close and manual button inputs.
   Out shift register code modified from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
-  Reads a dial and outputs the value to a 3 digit seven segment display.
+  AC current source user interface:
+    - Reads a dial,
+    - Outputs the value to a 3 digit seven segment display,
+    - Sends the dial adc value to the AC current source board.
 
 */
 #include <ezAnalogKeypad.h>
 #include <ShiftDisplay.h>
 
-float pot_value;
-const int DISPLAY_TYPE = COMMON_CATHODE;
-
-bool spring_charge_timer_running = 0; // Timer for spring charged status re-charging
-unsigned long spring_charge_start_time;
 #define SPRING_CHARGE_DURATION 4000 // Delay duration to emulate spring charging time in milliseconds
-
-#define POT_PIN A2
-#define SEG_DATA_PIN 6
+#define POT_PIN A2    // Pin for reading potentiometer of AC current source
+#define SEG_DATA_PIN 6  // Pins for the AC current source 7 segment display
 #define SEG_LATCH_PIN 7
 #define SEG_CLOCK_PIN 8
-#define DISPLAY_SIZE 3
+#define DISPLAY_SIZE 3  // Number of digits in the 7 segment display
+#define TRIP_INPUT_PIN 9  // Pin used for CB trip
+#define CLOSE_INPUT_PIN 10 // Pin used for CB close
+#define STATUS_CLOCK_PIN 2  //pin 11 SH_CP
+#define STATUS_LATCH_PIN 3 //pin 12 ST_CP
+#define STATUS_DATA_PIN 4  //pin 14 DS
+#define NUM_STATUS_REGISTERS 3
+#define NUM_STATUS_REGISTER_PINS NUM_STATUS_REGISTERS * 8
+
+float pot_value;  // variable to hold value read from potentiometer of AC current source
+bool spring_charge_timer_running = 0; // Flag for spring charged status re-charging
+unsigned long spring_charge_start_time;
+const int DISPLAY_TYPE = COMMON_CATHODE;  // type of 7 segment display
+boolean LEDregisters[NUM_STATUS_REGISTER_PINS];   // LEDs for status display
 
 ezAnalogKeypad buttonSet1(A1);   
 ezAnalogKeypad buttonSet2(A2);  
 ezAnalogKeypad buttonSet3(A5);  
 ShiftDisplay display(SEG_LATCH_PIN, SEG_CLOCK_PIN, SEG_DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE);
-
-#define TRIP_INPUT_PIN 9  // Digital pin used for CB trip
-#define CLOSE_INPUT_PIN 10
-
-// 74HC595 shift register pins and variables for LEDs
-#define STATUS_CLOCK_PIN 2  //pin 11 SH_CP
-#define STATUS_LATCH_PIN 3 //pin 12 ST_CP
-#define STATUS_DATA_PIN 4  //pin 14 DS
-
-#define num_status_registers 3
-#define num_status_register_pins num_status_registers * 8
-boolean LEDregisters[num_status_register_pins];
 
 // array index of each status 
 // CHANGE THIS TO MOVE THINGS AROUND ON THE USER INTERFACE (0 being the top left status on the user interface)
@@ -82,7 +80,7 @@ boolean prev_CB_status = HIGH;
 // Update status LEDs by writing to the status LEDs shift register data pin
 void outputLEDs() {
   digitalWrite(STATUS_LATCH_PIN, LOW);
-  for(int i = num_status_register_pins - 1; i >=  0; i--){
+  for(int i = NUM_STATUS_REGISTER_PINS - 1; i >=  0; i--){
     digitalWrite(STATUS_CLOCK_PIN, LOW);
 
     int val = LEDregisters[i];
@@ -156,7 +154,7 @@ void setup() {
   pinMode(STATUS_DATA_PIN, OUTPUT);
 
   // clear LED pins
-  for (int i = 0; i< num_status_register_pins; i++) {
+  for (int i = 0; i< NUM_STATUS_REGISTER_PINS; i++) {
     LEDregisters[i] = LOW;
   }
   outputLEDs();
