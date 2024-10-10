@@ -1,4 +1,6 @@
 /*
+This file should be modified to be used for debugging the PCB.
+---------------------------------------------------------------
    Created by ArduinoGetStarted.com
 
    This example code is in the public domain
