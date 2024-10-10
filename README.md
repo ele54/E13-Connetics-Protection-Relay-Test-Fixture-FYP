@@ -8,7 +8,7 @@ Code has largely been tested to work on a veroboard prototype. Pinmapping has si
 ## Description of each file
 **prototype2.ino:**
 
-This is the main file for the PCB which controls the user interface including the status buttons, LEDs, AC current source potentiomenter and 7 segment display. 
+This is the main file for the PCB which controls the user interface including the status buttons, LEDs, AC current source potentiometer and 7 segment display. 
 May be edited for reasons such as:
 - changing the spring charging delay
 - changing the frequency of communication to the AC current source MCU
