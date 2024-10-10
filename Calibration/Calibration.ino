@@ -1,4 +1,5 @@
 /*
+From the ezAnalogKeypad library:
    This code is for calibration. Please do step by step:
    - Upload the code to Arduino or ESP32
 
@@ -13,14 +14,17 @@
 
 void setup() {
   Serial.begin(9600);
-  pinMode(A0, INPUT);
   pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+  pinMode(A5, INPUT);
 }
 
 void loop() {
-  Serial.println("A0: ");
-  Serial.println(analogRead(A0));
   Serial.println("A1: ");
   Serial.println(analogRead(A1));
+  Serial.println("A2: ");
+  Serial.println(analogRead(A2));
+  Serial.println("A5: ");
+  Serial.println(analogRead(A5));
   delay(100);
 }
