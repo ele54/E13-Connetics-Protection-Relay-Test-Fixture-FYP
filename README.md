@@ -3,7 +3,7 @@
 ## Project status
 **prototype2.ino:**
 
-Code has largely been tested to work on a veroboard prototype. Pinmapping has since been changed for the PCB layout which is untested. UART comms is untested. 
+Code has largely been tested to work on a veroboard prototype. Pinmapping has since been changed for the PCB layout which is untested. UART comms section is untested. 
 
 ## Description of each file
 **prototype2.ino:**
