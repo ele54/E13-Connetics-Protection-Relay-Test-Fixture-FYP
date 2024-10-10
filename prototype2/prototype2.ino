@@ -1,18 +1,27 @@
 /*
+LED/Buttons PCB Program
+Author: Eshan Lee
+Date: 10/10/2024
 Final Prototype:
 
-  CB status opens and closes based on relay trip/close and manual button inputs.
-  Out shift register code modified from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
+  CB_status0 represents breaker position, which opens and closes based on relay trip/close.
+  CB_status1 represents spring charged status, which goes to low when breaker closes.
+  11 statuses are represented with 22 LEDs and 22 corresponding buttons. 
   AC current source user interface:
     - Reads a dial,
     - Outputs the value to a 3 digit seven segment display,
-    - Sends the dial adc value to the AC current source board.
+    - Sends the dial adc value to the AC current source board as two bytes formatted as
+      "aaaaaaaa aabxxxxx"
+      Where a's are adc bit, b is CB_status0 (breaker position) bit, and x are spare bits in the byte.
 
+  Status shift register code adapted from https://www.instructables.com/3-Arduino-pins-to-24-output-pins/
 */
+
 #include <ezAnalogKeypad.h>
 #include <ShiftDisplay.h>
 
 #define SPRING_CHARGE_DURATION 4000 // Delay duration to emulate spring charging time in milliseconds
+#define UART_PERIOD 70 // Period of time between UART transmission to AC current source MCU
 #define POT_PIN A2    // Pin for reading potentiometer of AC current source
 #define SEG_DATA_PIN 6  // Pins for the AC current source 7 segment display
 #define SEG_LATCH_PIN 7
@@ -26,10 +35,9 @@ Final Prototype:
 #define NUM_STATUS_REGISTERS 3
 #define NUM_STATUS_REGISTER_PINS NUM_STATUS_REGISTERS * 8
 
-float pot_value;  // variable to hold value read from potentiometer of AC current source
 bool spring_charge_timer_running = 0; // Flag for spring charged status re-charging
 unsigned long spring_charge_start_time;
-const int DISPLAY_TYPE = COMMON_CATHODE;  // type of 7 segment display
+const int DISPLAY_TYPE = COMMON_CATHODE;  // type of 7 segment display for AC current source
 boolean LEDregisters[NUM_STATUS_REGISTER_PINS];   // LEDs for status display
 
 ezAnalogKeypad buttonSet1(A1);   
@@ -140,7 +148,7 @@ void processButton(unsigned char key) {
 }
 
 void setup() {
-  // Serial.begin(9600);  // for debugging 
+  Serial.begin(115200);  // for serial comms to AC current source MCU 
   pinMode(TRIP_INPUT_PIN, INPUT);
   pinMode(CLOSE_INPUT_PIN, INPUT);
   pinMode(A1, INPUT);   // Button Set 1
@@ -195,11 +203,20 @@ void setup() {
 
 void loop() {
   // Analogue current source potentiometer and display
+  int pot_value;  // variable to hold value read from potentiometer of AC current source
   pot_value = analogRead(POT_PIN);
-  pot_value = pot_value/1023 * 2;   //map adc value to 0-2A
-  display.set(pot_value, 2, 0);
+  int AC_setpoint = pot_value/1023 * 2;   // map adc value to 0-2A
+  display.set(AC_setpoint, 2, 0);  // display with decimal point
   display.show();
-
+  // sending potentiometer reading and breaker position via uart to current source MCU every pre-defined period
+  unsigned long uart_timer = millis();
+  if (millis() - uart_timer >= UART_PERIOD) {
+    char msg_AC[2];
+    msg_AC[0] = pot_value >> 2;
+    msg_AC[1] = (pot_value << 6) | (CB_status0 << 5);
+    Serial.write(msg_AC, 2);
+  }
+  
   // Left set of buttons
   unsigned char key1 = buttonSet1.getKey();
   processButton(key1);
