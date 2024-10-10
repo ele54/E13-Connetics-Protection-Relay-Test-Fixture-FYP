@@ -15,4 +15,13 @@ May be edited for reasons such as:
 - if pushing a button changes the wrong LED
 - adding automatic behaviour to respond to button presses
 
+AnalogButtonArray.ino:
+Should be unneeded. Was used in earlier prototyping stages but may be modified to debug buttons if needed.
+
+Calibration.ino:
+Should be unneeded. Has been updated to read pins connected to buttons on PCB but has been unused/tested. May be used to recalibrate or debug buttons.
+
+displayAndDial.ino:
+Should be unneeded. Has been updated to read pins connected to the AC current source user interface on PCB but has been unused/untested. May be used for debugging. 
+
 
