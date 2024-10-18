@@ -109,7 +109,7 @@ void writeLEDRegister() {
   outputLEDs();
 }
 
-// Set cb status to high and set spring charged status to discharged
+// Set breaker position status to high and set spring charged status to discharged
 void closeCB() {
   prev_CB_status = statuses_array[CB_status0].state;
   statuses_array[CB_status0].state = LOW;  
@@ -120,7 +120,7 @@ void closeCB() {
   }
 }
 
-// Set cb status to low and saves previous cb status
+// Set breaker position status to low and saves previous breaker position status
 void openCB() {
     prev_CB_status = statuses_array[CB_status0].state;
     statuses_array[CB_status0].state = HIGH; 
