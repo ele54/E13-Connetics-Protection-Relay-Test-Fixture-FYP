@@ -24,14 +24,14 @@ Should be unneeded. Has been updated to read pins connected to buttons on PCB bu
 **displayAndDial.ino:**
 Should be unneeded. Has been updated to read pins connected to the AC current source user interface on PCB but has been unused/untested. May be used for debugging. 
 
-**ac_current_source_spwm**
+**ac_current_source_spwm.ino**
 The is the code used on the AC current souce in the present implementation (22/10/24). It uses SPWM and a low-pass filter to generate a sinusoidal voltage instead of a DAC.
 It is presently written with testing in mind. This code is suppose to be ran with another Arduino runing sender_test, which this code sends the 10-bit DAC code using UART.
 
 More details about its functionality and the connections required can be found in the OneDrive handover document.
 
-**ac_current_source_dac**
+**ac_current_source_dac.ino**
 An alternative version that uses the DAC instead of SPWM. Currently untested.
 
-**sender_test**
+**sender_test.ino**
 This file is contained in the ac_current_source_spwm folder. Another Arduino can run this software to send ADC codes to the current source board to change its output.
